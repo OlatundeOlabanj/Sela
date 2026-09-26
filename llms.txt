@@ -1,0 +1,35 @@
+# VeilPay
+
+> Invoicing and payments on Solana, built to actually land. VeilPay lets freelancers
+> generate an invoice, get paid in USDC directly to their wallet, and rely on the
+> Smart TX Stack (dynamic Jito tips + a Groq AI retry agent) to get that payment
+> confirmed even when the network is congested.
+
+VeilPay is non-custodial: it never holds, custodies, or has access to user funds.
+Every payment happens wallet-to-wallet, approved directly by the payer via Phantom.
+Amounts and wallet addresses are visible on Solana's public ledger, the same as any
+standard on-chain transfer. VeilPay's value is reliability (a payment built to
+land), not privacy.
+
+## Core features
+
+- Invoice creation and a shareable pay link (pay.html)
+- Direct SPL USDC transfers submitted as Jito bundles via the Smart TX Stack
+- AI-assisted retry logic (Groq) that decides whether/how to retry a stalled
+  or failed transaction, with safeguards against double-charging a payer
+- Token swaps (SOL/USDC/USDT) with live Jupiter quotes
+- Buy USDC with naira, or cash out USDC to a Nigerian bank/Opay account, via Bitnob
+- Recurring/subscription invoices
+- Wallet risk scanner for flagging new or suspicious wallets before paying
+
+## Key pages
+
+- Home: https://veilpay.store/
+- Dashboard (invoices, swap, buy/cash out): https://veilpay.store/dashboard.html
+- Pay an invoice: https://veilpay.store/pay.html
+- Privacy Policy: https://veilpay.store/privacy.html
+- Terms of Service: https://veilpay.store/tos.html
+
+## Made by
+
+TJS Code (Olabanjo Olatunde Jonah)

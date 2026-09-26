@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pay Invoice, Cognata</title>
+  <meta name="description" content="Pay a Cognata invoice in USDC on Solana. Submitted via the Smart TX Stack for a landing-rate guarantee, no wallet-to-wallet transfer gives you." />
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
+  <link rel="canonical" href="https://veilpay.store/pay.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Cognata" />
+  <meta property="og:title" content="Pay Invoice, Cognata" />
+  <meta property="og:description" content="Pay a Cognata invoice in USDC on Solana. Submitted via the Smart TX Stack for a landing-rate guarantee, no wallet-to-wallet transfer gives you." />
+  <meta property="og:image" content="https://veilpay.store/assets/og-image.png" />
+  <meta property="og:url" content="https://veilpay.store/pay.html" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Pay Invoice, Cognata" />
+  <meta name="twitter:description" content="Pay a Cognata invoice in USDC on Solana. Submitted via the Smart TX Stack for a landing-rate guarantee." />
+  <meta name="twitter:image" content="https://veilpay.store/assets/og-image.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body { display: flex; flex-direction: column; min-height: 100vh; }
+    main { flex: 1; }
+
+    .pay-wrapper { display: flex; align-items: flex-start; justify-content: center; padding: 3rem 1.25rem; min-height: 80vh; }
+    .pay-card { width: 100%; max-width: 520px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-lg); }
+    .pay-card-bar { height: 4px; background: linear-gradient(90deg, var(--accent), #fbbf24); }
+    .pay-card-body { padding: 2rem; }
+
+    .pay-issuer { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.75rem; }
+    .pay-issuer-avatar { width: 40px; height: 40px; background: var(--accent-dim); border: 1px solid rgba(245,158,11,0.3); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .pay-issuer-label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 2px; }
+    .pay-issuer-wallet { font-family: var(--font-mono); font-size: 0.9rem; font-weight: 600; color: var(--text); }
+
+    .pay-details { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 1.25rem; }
+    .pay-detail-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 0.85rem 1.1rem; border-bottom: 1px solid var(--border); }
+    .pay-detail-row:last-child { border-bottom: none; }
+    .pay-detail-label { font-size: 0.8rem; color: var(--text-muted); flex-shrink: 0; padding-top: 1px; }
+    .pay-detail-value { font-size: 0.9rem; color: var(--text); text-align: right; font-weight: 500; }
+    .pay-line-items { padding: 0.6rem 1.1rem; border-bottom: 1px solid var(--border); }
+    .pay-line-item-row { display: flex; justify-content: space-between; gap: 1rem; padding: 0.3rem 0; font-size: 0.85rem; }
+    .pay-line-item-desc { color: var(--text-muted); }
+    .pay-line-item-amount { color: var(--text); font-family: var(--font-mono); font-weight: 500; flex-shrink: 0; }
+    .pay-amount-large { font-family: var(--font-mono); font-size: 1.6rem; font-weight: 700; color: var(--accent); letter-spacing: -0.03em; }
+    .pay-fee-note { font-size: 0.72rem; color: var(--text-dim); text-align: right; margin-top: 2px; }
+
+    .reliability-notice { display: flex; align-items: flex-start; gap: 0.65rem; background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.2); border-radius: var(--radius-sm); padding: 0.85rem 1rem; margin-bottom: 1.25rem; font-size: 0.82rem; color: #fbbf24; line-height: 1.55; }
+    .reliability-notice svg { flex-shrink: 0; margin-top: 1px; }
+
+    .pay-state { display: none; }
+    .pay-state.active { display: block; }
+
+    /* Multi-step progress */
+    .step-progress { display: flex; flex-direction: column; gap: 0.85rem; margin-bottom: 1.25rem; }
+    .step-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.7rem 0.9rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg); transition: all 0.2s; }
+    .step-row.active { border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.05); }
+    .step-row.done { border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.05); }
+    .step-icon { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: var(--bg-card-2); border: 1px solid var(--border-light); }
+    .step-row.active .step-icon { background: rgba(245,158,11,0.15); border-color: var(--accent); }
+    .step-row.done .step-icon { background: rgba(16,185,129,0.15); border-color: var(--success); }
+    .step-text { font-size: 0.85rem; color: var(--text-muted); }
+    .step-row.active .step-text, .step-row.done .step-text { color: var(--text); font-weight: 500; }
+    .step-spinner { width: 12px; height: 12px; border: 2px solid rgba(245,158,11,0.25); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+
+    .loading-panel { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 1rem; text-align: center; }
+    .loading-panel h4 { color: var(--text); font-size: 1rem; }
+    .loading-panel p { font-size: 0.875rem; }
+
+    .success-panel { padding: 1.5rem 0 0.5rem; text-align: center; }
+    .success-panel h3 { color: var(--success); margin-bottom: 0.5rem; font-size: 1.3rem; }
+    .success-panel p { font-size: 0.875rem; margin-bottom: 1.25rem; }
+    .tx-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 0.4rem; text-align: left; }
+
+    .error-panel { text-align: center; padding: 1rem 0; }
+    .error-panel h4 { color: var(--error); margin-bottom: 0.4rem; }
+    .error-panel p { font-size: 0.875rem; }
+
+    .not-found { text-align: center; padding: 3rem 2rem; }
+    .not-found svg { margin: 0 auto 1.25rem; opacity: 0.3; }
+    .not-found h3 { margin-bottom: 0.5rem; }
+    .not-found p { font-size: 0.875rem; margin-bottom: 1.5rem; }
+
+    .solana-badge { display: flex; align-items: center; justify-content: center; gap: 0.4rem; font-size: 0.75rem; color: var(--text-dim); margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <defs>
+            <linearGradient id="navShieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#F4C752"/>
+              <stop offset="100%" stop-color="#C68A15"/>
+            </linearGradient>
+          </defs>
+          <rect width="28" height="28" rx="8" fill="#f59e0b" fill-opacity="0.15"/>
+          <path d="M14 6.5 L20 9 V14 C20 18.5 17.5 21.5 14 23 C10.5 21.5 8 18.5 8 14 V9 Z"
+                fill="none" stroke="url(#navShieldGrad)" stroke-width="1.5"/>
+          <path d="M10.5 15 H17.5" stroke="url(#navShieldGrad)" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M15 11.5 L18.5 15 L15 18.5" fill="none" stroke="url(#navShieldGrad)" stroke-width="1.5"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="nav-logo-text">Veil<span>Pay</span></span>
+      </a>
+      <div class="nav-actions">
+        <span id="navWalletDisplay" class="wallet-address" style="display:none;"></span>
+        <button id="navConnectBtn" class="btn btn-ghost btn-sm" onclick="handleConnectWallet()">
+          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 12a2 2 0 0 0 0 4h4v-4h-4z"/>
+          </svg>
+          Connect Wallet
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="pay-wrapper">
+
+      <div class="pay-card" id="notFoundCard" style="display:none;">
+        <div class="pay-card-bar"></div>
+        <div class="pay-card-body">
+          <div class="not-found">
+            <svg width="56" height="56" fill="none" viewBox="0 0 24 24" stroke="#6b7280" stroke-width="1.2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <h3>Invoice Not Found</h3>
+            <p>This invoice link is invalid, expired, or has already been paid. Please contact the sender for a new link.</p>
+            <a href="index.html" class="btn btn-ghost">Go to Cognata Home</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="pay-card" id="invoiceCard" style="display:none;">
+        <div class="pay-card-bar"></div>
+        <div class="pay-card-body">
+
+          <div class="pay-issuer">
+            <div class="pay-issuer-avatar">
+              <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#f59e0b" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <div>
+              <div class="pay-issuer-label">Invoice from</div>
+              <div id="issuerWallet" class="pay-issuer-wallet">-</div>
+            </div>
+          </div>
+
+          <div class="pay-details">
+            <div class="pay-detail-row">
+              <span class="pay-detail-label">Client</span>
+              <span id="detailClient" class="pay-detail-value">-</span>
+            </div>
+            <div class="pay-detail-row">
+              <span class="pay-detail-label">Date Issued</span>
+              <span id="detailDate" class="pay-detail-value">-</span>
+            </div>
+            <div id="detailDueDateRow" class="pay-detail-row" style="display:none;">
+              <span class="pay-detail-label">Due Date</span>
+              <span id="detailDueDate" class="pay-detail-value">-</span>
+            </div>
+            <div id="detailLineItems" class="pay-line-items"></div>
+            <div id="detailNotesRow" class="pay-detail-row" style="display:none;flex-direction:column;align-items:flex-start;gap:0.35rem;">
+              <span class="pay-detail-label">Notes</span>
+              <span id="detailNotes" class="pay-detail-value" style="max-width:100%;white-space:normal;text-align:left;">-</span>
+            </div>
+            <div class="pay-detail-row" style="background:rgba(245,158,11,0.04);">
+              <span class="pay-detail-label" style="padding-top:4px;">Total Due</span>
+              <div>
+                <div id="detailAmount" class="pay-amount-large">0.00 USDC</div>
+                <div id="detailStatus" style="text-align:right;margin-top:4px;"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="reliability-notice">
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+            This payment goes wallet-to-wallet in USDC on Solana mainnet. Cognata's Smart TX Stack submits it as a Jito bundle with a live-market tip and an AI agent deciding on retries, so it lands reliably even under network congestion.
+          </div>
+
+          <div id="stateConnect" class="pay-state active">
+            <button id="connectPayBtn" class="btn btn-primary btn-full btn-lg" onclick="handleConnectWallet()">
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 12a2 2 0 0 0 0 4h4v-4h-4z"/>
+              </svg>
+              Connect Wallet to Pay
+            </button>
+          </div>
+
+          <div id="stateReady" class="pay-state">
+            <div class="alert alert-green" style="margin-bottom:1rem;">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              <span id="payerAddressDisplay" style="font-family:var(--font-mono);font-size:0.82rem;">Wallet connected</span>
+            </div>
+            <button id="payNowBtn" class="btn btn-primary btn-full btn-lg" onclick="handlePayNow()">
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+              </svg>
+              <span id="payBtnLabel">Pay 0.00 USDC</span>
+            </button>
+          </div>
+
+          <div id="stateProcessing" class="pay-state">
+            <div class="loading-panel">
+              <div class="step-progress">
+                <div class="step-row" id="stepDeposit">
+                  <div class="step-icon"><div class="step-spinner" style="display:none;" id="depositSpinner"></div></div>
+                  <span class="step-text">Building transaction</span>
+                </div>
+                <div class="step-row" id="stepTransfer">
+                  <div class="step-icon"><div class="step-spinner" style="display:none;" id="transferSpinner"></div></div>
+                  <span class="step-text">Submitting via Smart TX Stack</span>
+                </div>
+              </div>
+              <p>Approve the signature request in <span id="processingWalletName">your wallet</span> when it appears.</p>
+            </div>
+          </div>
+
+          <div id="stateSuccess" class="pay-state">
+            <div class="success-panel">
+              <div class="success-check">
+                <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#10b981" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </div>
+              <h3>Payment Sent</h3>
+              <p>Your USDC has landed directly in the recipient's wallet.</p>
+              <div class="tx-label">Transfer Signature</div>
+              <div id="txHashDisplay" class="tx-hash" onclick="copyTxHash()" style="cursor:pointer;text-align:left;" title="Click to copy">-</div>
+              <div style="margin-top:1.25rem;">
+                <a id="explorerLink" href="#" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">
+                  <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                  </svg>
+                  View on Solscan
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div id="stateError" class="pay-state">
+            <div class="error-panel">
+              <div class="alert alert-red" style="margin-bottom:1rem;text-align:left;">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                </svg>
+                <div>
+                  <div style="font-weight:600;margin-bottom:3px;">Payment Failed</div>
+                  <div id="errorMessage" style="font-size:0.82rem;">An unexpected error occurred.</div>
+                </div>
+              </div>
+              <button class="btn btn-ghost btn-full" onclick="resetToReady()">Try Again</button>
+            </div>
+          </div>
+
+          <div class="solana-badge">
+            <svg width="14" height="14" viewBox="0 0 101 88" fill="none">
+              <path d="M100.48 69.32L83.84 85.96a1.87 1.87 0 0 1-1.32.54H1.88A1.87 1.87 0 0 1 .54 83.19l16.66-16.66a1.87 1.87 0 0 1 1.32-.54h80.64a1.87 1.87 0 0 1 1.32 3.33zM100.48 18.55L83.84 1.91A1.87 1.87 0 0 0 82.52 1.37H1.88A1.87 1.87 0 0 0 .54 4.7l16.66 16.66a1.87 1.87 0 0 0 1.32.54h80.64a1.87 1.87 0 0 0 1.32-3.35zM.54 52.44l16.64 16.64a1.87 1.87 0 0 0 1.32.54h80.64a1.87 1.87 0 0 0 1.32-3.33L83.82 49.65a1.87 1.87 0 0 0-1.32-.54H1.86A1.87 1.87 0 0 0 .54 52.44z" fill="#9945FF"/>
+            </svg>
+            Powered by Cognata's Smart TX Stack
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <span class="footer-text">Cognata. Direct on-chain invoicing</span>
+      <div class="footer-links">
+        <a href="privacy.html">Privacy</a>
+        <span class="footer-dot">·</span>
+        <a href="tos.html">Terms</a>
+      </div>
+      <span class="footer-brand">Made by TJS Code</span>
+    </div>
+  </footer>
+
+  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+  <script src="wallet-adapter.js"></script>
+  <script src="payment-transfer.js"></script>
+  <script src="smart-tx.js"></script>
+  <script src="veil-engine.js"></script>
+  <script src="app.js"></script>
+  <script>
+    let currentInvoice = null;
+    let payerWallet    = null;
+    let currentTxHash  = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const invoiceId = Cognata.getURLParam('id');
+      if (!invoiceId) { showNotFound(); return; }
+
+      const invoice = await Cognata.getInvoice(invoiceId);
+      if (!invoice) { showNotFound(); return; }
+
+      currentInvoice = invoice;
+      populateInvoice(invoice);
+
+      const wallet = Cognata.WalletState.get();
+      if (wallet?.publicKey) {
+        payerWallet = wallet;
+        showState('stateReady');
+        applyWalletToUI(wallet);
+        const live = await Cognata.reconnectWalletSilently(wallet.walletName);
+        if (live) {
+          payerWallet = live;
+          Cognata.WalletState.set(live);
+          applyWalletToUI(live);
+        }
+      }
+
+      if (invoice.status === 'paid' && invoice.txHash) {
+        showSuccessState(invoice.txHash, `https://solscan.io/tx/${invoice.txHash}`);
+      }
+    });
+
+    function populateInvoice(invoice) {
+      document.getElementById('invoiceCard').style.display = 'block';
+      document.getElementById('issuerWallet').textContent = Cognata.truncateWallet(invoice.recipientWallet) || 'Unknown Sender';
+      document.getElementById('detailClient').textContent  = invoice.clientName;
+
+      // Older invoices only have a flat description, newer ones have a
+      // real itemized lineItems array, render whichever is present.
+      const lineItemsEl = document.getElementById('detailLineItems');
+      if (Array.isArray(invoice.lineItems) && invoice.lineItems.length) {
+        lineItemsEl.innerHTML = invoice.lineItems.map(item => `
+          <div class="pay-line-item-row">
+            <span class="pay-line-item-desc">${Cognata.escapeHtml(item.description)}</span>
+            <span class="pay-line-item-amount">${Cognata.formatAmount(item.amount)} USDC</span>
+          </div>
+        `).join('');
+      } else if (invoice.description) {
+        lineItemsEl.innerHTML = `<div class="pay-line-item-row"><span class="pay-line-item-desc">${Cognata.escapeHtml(invoice.description)}</span></div>`;
+      }
+
+      const dueDateRow = document.getElementById('detailDueDateRow');
+      if (invoice.dueDate) {
+        dueDateRow.style.display = 'flex';
+        document.getElementById('detailDueDate').textContent = Cognata.formatDate(invoice.dueDate);
+      }
+
+      const notesRow = document.getElementById('detailNotesRow');
+      if (invoice.notes) {
+        notesRow.style.display = 'flex';
+        document.getElementById('detailNotes').textContent = invoice.notes;
+      }
+
+      document.getElementById('detailDate').textContent    = Cognata.formatDate(invoice.createdAt);
+      document.getElementById('detailAmount').textContent  = Cognata.formatAmount(invoice.amount) + ' USDC';
+      document.getElementById('detailStatus').innerHTML    = Cognata.statusBadge(invoice.status);
+      document.getElementById('payBtnLabel').textContent   = `Pay ${Cognata.formatAmount(invoice.amount)} USDC`;
+    }
+
+    function showNotFound() { document.getElementById('notFoundCard').style.display = 'block'; }
+
+    function showState(id) {
+      document.querySelectorAll('.pay-state').forEach(el => el.classList.remove('active'));
+      const el = document.getElementById(id);
+      if (el) el.classList.add('active');
+    }
+
+    function applyWalletToUI(wallet) {
+      document.getElementById('navConnectBtn').style.display    = 'none';
+      document.getElementById('navWalletDisplay').style.display = 'block';
+      document.getElementById('navWalletDisplay').textContent   = wallet.truncated || Cognata.truncateWallet(wallet.publicKey);
+      document.getElementById('payerAddressDisplay').textContent = 'Connected: ' + (wallet.truncated || Cognata.truncateWallet(wallet.publicKey));
+    }
+
+    async function handleConnectWallet() {
+      await Cognata.connectWalletUI({
+        onSuccess(wallet) {
+          payerWallet = wallet;
+          applyWalletToUI(wallet);
+          showState('stateReady');
+          Cognata.showToast('Wallet connected: ' + wallet.truncated, 'green');
+        }
+      });
+    }
+
+    function setStepState(stepId, spinnerId, state) {
+      const row = document.getElementById(stepId);
+      const spinner = document.getElementById(spinnerId);
+      if (!row) return; // step row not found, nothing to update
+      row.classList.remove('active', 'done');
+      if (spinner) spinner.style.display = 'none'; // spinner may already be gone if this step already completed once
+      const icon = row.querySelector('.step-icon');
+      if (state === 'active') {
+        row.classList.add('active');
+        if (spinner) spinner.style.display = 'block';
+      } else if (state === 'done') {
+        row.classList.add('done');
+        icon.innerHTML = '<svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
+      }
+    }
+
+    async function handlePayNow() {
+      if (!payerWallet) { Cognata.showToast('Connect your wallet first.', 'red'); return; }
+      if (!currentInvoice) { Cognata.showToast('Invoice data not loaded.', 'red'); return; }
+      if (currentInvoice.status === 'paid') { Cognata.showToast('This invoice has already been paid.', 'amber'); return; }
+      if (payerWallet.publicKey === currentInvoice.recipientWallet) {
+        Cognata.showToast('You cannot pay your own invoice. Switch to a different wallet.', 'red');
+        return;
+      }
+
+      showState('stateProcessing');
+      document.getElementById('processingWalletName').textContent = payerWallet.walletName || 'your wallet';
+      let depositStepDone = false;
+      document.getElementById('stepDeposit').querySelector('.step-icon').innerHTML = '<div class="step-spinner" id="depositSpinner" style="display:none;"></div>';
+      document.getElementById('stepTransfer').querySelector('.step-icon').innerHTML = '<div class="step-spinner" id="transferSpinner" style="display:none;"></div>';
+
+      try {
+        const result = await VeilEngine.executePrivatePayment({
+          paymentId:       currentInvoice.paymentId || currentInvoice.id,
+          payerWallet:     payerWallet.publicKey,
+          recipientWallet: currentInvoice.recipientWallet,
+          amount:          currentInvoice.amount,
+          onProgress(stage) {
+            if (stage === 'depositing') setStepState('stepDeposit', 'depositSpinner', 'active');
+            if (stage === 'transferring' && !depositStepDone) {
+              depositStepDone = true;
+              setStepState('stepDeposit', 'depositSpinner', 'done');
+              setStepState('stepTransfer', 'transferSpinner', 'active');
+            }
+          }
+        });
+
+        setStepState('stepTransfer', 'transferSpinner', 'done');
+        currentTxHash = result.txHash;
+
+        await Cognata.updateInvoiceStatus(currentInvoice.id, 'paid', {
+          txHash: result.txHash,
+          depositTxHash: result.depositTxHash,
+          paidAt: new Date().toISOString(),
+        });
+        currentInvoice.status = 'paid';
+        currentInvoice.txHash = result.txHash;
+        document.getElementById('detailStatus').innerHTML = Cognata.statusBadge('paid');
+
+        // Flag for the recipient's dashboard that funds are claimable
+        try {
+          const claimKey = `veilpay_claimable_${currentInvoice.recipientWallet}`;
+          const existing = JSON.parse(localStorage.getItem(claimKey) || '[]');
+          existing.push({ invoiceId: currentInvoice.id, amount: currentInvoice.amount, time: new Date().toISOString() });
+          localStorage.setItem(claimKey, JSON.stringify(existing));
+        } catch (e) {}
+
+        setTimeout(() => {
+          showSuccessState(result.txHash, result.explorerUrl);
+          Cognata.launchConfetti();
+          Cognata.showToast('Payment sent!', 'green', 5000);
+        }, 500);
+
+      } catch (err) {
+        console.error('[Cognata] Payment error:', err);
+        document.getElementById('errorMessage').textContent = err.message || 'Transaction failed. Please try again.';
+        showState('stateError');
+        Cognata.showToast('Payment failed: ' + (err.message || 'Unknown error'), 'red');
+      }
+    }
+
+    function showSuccessState(txHash, explorerUrl) {
+      document.getElementById('txHashDisplay').textContent = txHash;
+      document.getElementById('explorerLink').href = explorerUrl || `https://solscan.io/tx/${txHash}`;
+      showState('stateSuccess');
+    }
+
+    function resetToReady() { showState('stateReady'); }
+
+    function copyTxHash() {
+      if (currentTxHash || currentInvoice?.txHash) {
+        Cognata.copyToClipboard(currentTxHash || currentInvoice.txHash, document.getElementById('txHashDisplay'));
+      }
+    }
+  </script>
+</body>
+</html>

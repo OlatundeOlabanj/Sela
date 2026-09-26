@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy, Cognata</title>
+<meta name="description" content="Cognata Privacy Policy, how we handle data for our wallet-based invoicing platform on Solana.">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+<link rel="canonical" href="https://veilpay.store/privacy.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Cognata">
+<meta property="og:title" content="Privacy Policy, Cognata">
+<meta property="og:description" content="Cognata Privacy Policy, how we handle data for our wallet-based invoicing platform on Solana.">
+<meta property="og:image" content="https://veilpay.store/assets/og-image.png">
+<meta property="og:url" content="https://veilpay.store/privacy.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Privacy Policy, Cognata">
+<meta name="twitter:image" content="https://veilpay.store/assets/og-image.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ── Navbar ── -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <defs>
+            <linearGradient id="navShieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#F4C752"/>
+              <stop offset="100%" stop-color="#C68A15"/>
+            </linearGradient>
+          </defs>
+          <rect width="28" height="28" rx="8" fill="#f59e0b" fill-opacity="0.15"/>
+          <path d="M14 6.5 L20 9 V14 C20 18.5 17.5 21.5 14 23 C10.5 21.5 8 18.5 8 14 V9 Z"
+                fill="none" stroke="url(#navShieldGrad)" stroke-width="1.5"/>
+          <path d="M10.5 15 H17.5" stroke="url(#navShieldGrad)" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M15 11.5 L18.5 15 L15 18.5" fill="none" stroke="url(#navShieldGrad)" stroke-width="1.5"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="nav-logo-text">Veil<span>Pay</span></span>
+      </a>
+      <div class="nav-actions">
+        <a href="dashboard.html" class="btn btn-ghost btn-sm hide-mobile">Dashboard</a>
+        <a href="dashboard.html" class="btn btn-primary btn-sm">Open App</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Legal Content ── -->
+  <section style="padding: 4rem 0 5rem;">
+    <div class="container" style="max-width: 760px;">
+
+      <div class="hero-eyebrow" style="margin-bottom: 1.25rem;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        Privacy Policy
+      </div>
+
+      <h1 style="font-size: clamp(1.75rem, 4vw, 2.5rem); margin-bottom: 0.5rem;">How Cognata handles data</h1>
+      <p class="mono" style="color: var(--text-dim); margin-bottom: 2.5rem;">Last updated: June 23, 2026</p>
+
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <p style="color: var(--text); margin-bottom: 0;">Cognata is built to need as little of your data as possible. There's no signup, no account, and no email required to use it. This policy explains exactly what that means in practice.</p>
+      </div>
+
+      <h2 style="margin-top: 2.5rem; margin-bottom: 0.75rem;">1. What we don't collect</h2>
+      <p style="margin-bottom: 1rem;">Cognata does not require an account. We don't collect your name, email address, phone number, or any other personal identifying information to use the app. There is no login system and nothing stored about you on a Cognata server tied to your identity.</p>
+
+      <h2 style="margin-top: 2.5rem; margin-bottom: 0.75rem;">2. What Cognata does interact with</h2>
+      <p style="margin-bottom: 0.75rem;">To use Cognata, you connect a Solana wallet (such as Phantom). Here's what that involves:</p>
+      <ul style="margin: 0 0 1rem 1.25rem; color: var(--text-muted); line-height: 1.8;">
+        <li>Your wallet's public key is used to identify your invoices and payments. A public key is not personal information by itself. It's a public, pseudonymous address.</li>
+        <li>Transaction data (invoice amounts, payment status, timestamps) is used to build and submit real USDC transfers on Solana mainnet. Amounts and wallet addresses involved in a payment are visible on Solana's public ledger, the same as any standard on-chain transfer.</li>
+        <li>A truncated version of your public key may be stored temporarily in your browser's session storage purely to maintain your session while you use the app. This is never sent to a Cognata server and clears when your session ends.</li>
+      </ul>
+
+      <h2 style="margin-top: 2.5rem; margin-bottom: 0.75rem;">3. On-chain data</h2>
+      <p style="margin-bottom: 1rem;">Solana is a public blockchain. Every payment made through Cognata, the amount, the sender's wallet, and the recipient's wallet, is visible on the public ledger, the same as any standard on-chain transfer. Cognata does not hide or encrypt any part of a transaction. Cognata's Smart TX Stack (dynamic Jito tips and AI-assisted retry) exists to help your payment land reliably, not to hide it.</p>
+
+      <h2 style="margin-top: 2.5rem; margin-bottom: 0.75rem;">4. Cookies and analytics</h2>
+      <p style="margin-bottom: 1rem;">Cognata does not use third-party advertising trackers or sell any data to anyone, because we don't collect personal data to sell in the first place. If basic, anonymized analytics are ever added to understand traffic patterns (e.g. page views, not individual identity), this policy will be updated to reflect that before it happens.</p>
+
+      <h2 style="margin-top: 2.5rem; margin-bottom: 0.75rem;">5. Third-party services</h2>
+      <p style="margin-bottom: 1rem;">Cognata relies on infrastructure providers to function: Helius for Solana RPC access, and Jito for transaction submission. These providers may process technical request data (such as IP address and RPC call data) under their own privacy policies as part of standard infrastructure operation. Cognata does not share any personal data with these providers because Cognata itself does not collect any.</p>
+
+      <h2 style="margin-top: 2.5rem; margin-bottom: 0.75rem;">6. Your wallet, your control</h2>
+      <p style="margin-bottom: 1rem;">Cognata never has access to your private keys or seed phrase. Every transaction requires your explicit approval through your connected wallet. Disconnecting your wallet at any time ends Cognata's access to your session entirely.</p>
+
+      <h2 style="margin-top: 2.5rem; margin-bottom: 0.75rem;">7. Changes to this policy</h2>
+      <p style="margin-bottom: 1rem;">If Cognata's data practices change, for example, if we ever introduce optional accounts or notifications, this page will be updated and the "last updated" date above will reflect it.</p>
+
+      <h2 style="margin-top: 2.5rem; margin-bottom: 0.75rem;">8. Contact</h2>
+      <p style="margin-bottom: 0;">Questions about this policy can be directed to the Cognata team via the contact details listed on our GitHub repository.</p>
+
+    </div>
+  </section>
+
+  <!-- ── Footer ── -->
+  <footer>
+    <div class="container">
+      <span class="footer-text">Cognata, Invoicing for freelancers on Solana</span>
+      <div class="footer-links">
+        <a href="privacy.html">Privacy</a>
+        <span class="footer-dot">·</span>
+        <a href="tos.html">Terms</a>
+      </div>
+      <span class="footer-brand">Made by TJS Code</span>
+    </div>
+  </footer>
+
+</body>
+</html>

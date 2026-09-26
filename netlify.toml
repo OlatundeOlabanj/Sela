@@ -1,0 +1,50 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/api/invoice"
+  to = "/.netlify/functions/invoice-store"
+  status = 200
+
+[[redirects]]
+  from = "/api/rpc"
+  to = "/.netlify/functions/rpc-proxy"
+  status = 200
+
+[[redirects]]
+  from = "/api/submit-bundle"
+  to = "/.netlify/functions/submit-bundle"
+  status = 200
+
+[[redirects]]
+  from = "/api/get-tip"
+  to = "/.netlify/functions/get-tip"
+  status = 200
+
+[[redirects]]
+  from = "/api/reason-retry"
+  to = "/.netlify/functions/reason-retry"
+  status = 200
+
+[[redirects]]
+  from = "/api/buy-crypto"
+  to = "/.netlify/functions/buy-crypto"
+  status = 200
+
+[[redirects]]
+  from = "/api/cash-out"
+  to = "/.netlify/functions/cash-out"
+  status = 200
+
+[[redirects]]
+  from = "/api/bitnob-webhook"
+  to = "/.netlify/functions/bitnob-webhook"
+  status = 200
+
+# Netlify auto-serves a root-level 404.html for unmatched paths since
+# publish = ".", this rule is an explicit backup for that behavior.
+[[redirects]]
+  from = "/*"
+  to = "/404.html"
+  status = 404

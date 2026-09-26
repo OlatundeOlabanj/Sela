@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard, Cognata</title>
+  <meta name="description" content="Manage Cognata invoices, swap tokens, buy or cash out naira, and track payment history." />
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
+  <link rel="canonical" href="https://veilpay.store/dashboard.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Cognata" />
+  <meta property="og:title" content="Dashboard, Cognata" />
+  <meta property="og:description" content="Manage Cognata invoices, swap tokens, buy or cash out naira, and track payment history." />
+  <meta property="og:image" content="https://veilpay.store/assets/og-image.png" />
+  <meta property="og:url" content="https://veilpay.store/dashboard.html" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Dashboard, Cognata" />
+  <meta name="twitter:description" content="Manage Cognata invoices, swap tokens, buy or cash out naira, and track payment history." />
+  <meta name="twitter:image" content="https://veilpay.store/assets/og-image.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body { display: flex; flex-direction: column; min-height: 100vh; }
+    main { flex: 1; }
+
+    /* ── Stats Bar ── */
+    .stats-bar { background: var(--bg-card); border-bottom: 1px solid var(--border); padding: 0.85rem 0; }
+    .stats-bar .container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; }
+    @media (min-width: 640px) { .stats-bar .container { grid-template-columns: repeat(4, 1fr); } }
+    .stat-item { padding: 0.6rem 1.25rem; border-right: 1px solid var(--border); animation: fadeSlideIn 0.4s ease both; }
+    .stat-item:last-child { border-right: none; }
+    .stat-item:nth-child(1) { animation-delay: 0.05s; }
+    .stat-item:nth-child(2) { animation-delay: 0.1s; }
+    .stat-item:nth-child(3) { animation-delay: 0.15s; }
+    .stat-item:nth-child(4) { animation-delay: 0.2s; }
+    .stat-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 0.2rem; }
+    .stat-value { font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; color: var(--text); line-height: 1; }
+    .stat-value.accent { color: var(--accent); }
+    .stat-value.success { color: var(--success); }
+
+    /* ── Tab Nav ── */
+    .tab-nav { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 0; overflow-x: auto; scrollbar-width: none; }
+    .tab-nav::-webkit-scrollbar { display: none; }
+    .tab-btn { display: flex; align-items: center; gap: 0.4rem; padding: 0.9rem 1.25rem; font-size: 0.875rem; font-weight: 500; color: var(--text-muted); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.2s ease; white-space: nowrap; margin-bottom: -1px; }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-badge { font-size: 0.68rem; font-weight: 700; background: var(--accent-dim); color: var(--accent); border-radius: 100px; padding: 0.1rem 0.45rem; }
+    .tab-pane { display: none; padding: 1.75rem 0; }
+    .tab-pane.active { display: block; animation: fadeSlideIn 0.25s ease; }
+
+    /* ── Dashboard Layout ── */
+    .dashboard-layout { display: grid; grid-template-columns: 1fr; gap: 1.5rem; align-items: start; }
+    @media (min-width: 768px) { .dashboard-layout { grid-template-columns: 360px 1fr; gap: 2rem; } }
+    .invoice-form-panel { max-width: 640px; margin: 0 auto 2rem; }
+    .invoice-form-row { display: grid; grid-template-columns: 1fr; gap: 0; }
+    @media (min-width: 560px) { .invoice-form-row { grid-template-columns: 1.4fr 1fr; gap: 1rem; } }
+    .invoice-history-panel { width: 100%; }
+
+    /* ── Line items ── */
+    .line-items-list { display: flex; flex-direction: column; gap: 0.5rem; }
+    .line-item-row { display: grid; grid-template-columns: 1fr 110px 32px; gap: 0.5rem; align-items: center; }
+    .line-item-remove { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border); background: none; color: var(--text-dim); cursor: pointer; transition: all 0.15s ease; flex-shrink: 0; }
+    .line-item-remove:hover { color: #ef4444; border-color: #ef4444; }
+    .line-items-total { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.85rem; margin: 0.6rem 0 1.1rem; background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.2); border-radius: var(--radius-lg, 10px); }
+    .line-items-total-label { font-weight: 500; color: var(--text-muted); font-size: 0.82rem; }
+    .line-items-total-value { font-family: var(--font-mono); font-weight: 700; color: var(--accent); }
+
+
+    .panel-title { font-size: 0.875rem; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 0.5rem; }
+    .panel-badge { font-size: 0.68rem; font-weight: 700; background: var(--accent-dim); color: var(--accent); border-radius: 100px; padding: 0.15rem 0.5rem; }
+    .invoice-list { display: flex; flex-direction: column; gap: 0.65rem; max-height: 68vh; overflow-y: auto; padding-right: 2px; }
+    .invoice-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+    .invoice-grid .empty-state { grid-column: 1 / -1; }
+
+    .wallet-strip { display: flex; align-items: center; gap: 0.6rem; background: var(--accent-dim); border: 1px solid rgba(245,158,11,0.2); border-radius: var(--radius-sm); padding: 0.5rem 0.75rem; font-size: 0.8rem; color: var(--accent); font-weight: 500; margin-bottom: 1.1rem; }
+    .wallet-strip span { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .connect-wall { display: flex; align-items: center; gap: 0.5rem; background: rgba(245,158,11,0.04); border: 1px dashed rgba(245,158,11,0.2); border-radius: var(--radius-sm); padding: 0.65rem 0.85rem; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; }
+    .form-disabled .form-input, .form-disabled .form-textarea { opacity: 0.45; pointer-events: none; }
+
+    .page-header { border-bottom: 1px solid var(--border); }
+    .page-header-inner { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 1.5rem 0 0; flex-wrap: wrap; }
+    .page-title { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em; }
+    .page-subtitle { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.15rem; }
+
+    .share-link-wrap { background: var(--bg); border: 1px dashed var(--border-light); border-radius: var(--radius-sm); padding: 1rem; margin: 0.75rem 0 1.1rem; }
+    .share-link-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); margin-bottom: 0.45rem; }
+    .share-url { font-family: var(--font-mono); font-size: 0.78rem; color: var(--text); word-break: break-all; line-height: 1.5; }
+    .share-actions { display: flex; gap: 0.65rem; margin-top: 1.1rem; flex-wrap: wrap; }
+    .success-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0.85rem; background: var(--success-dim); border: 1px solid rgba(16,185,129,0.2); border-radius: var(--radius-sm); font-size: 0.85rem; color: var(--success); font-weight: 500; margin-bottom: 1rem; }
+
+    /* ── Fee notice ── */
+    .fee-notice { display: flex; align-items: flex-start; gap: 0.6rem; background: rgba(245,158,11,0.05); border: 1px solid rgba(245,158,11,0.15); border-radius: var(--radius-sm); padding: 0.65rem 0.85rem; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.5; }
+    .fee-notice svg { flex-shrink: 0; margin-top: 1px; color: var(--accent); }
+
+    /* ── Claim Funds Banner ── */
+    .claim-banner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(245,158,11,0.04)); border: 1px solid rgba(245,158,11,0.25); border-radius: var(--radius-lg); padding: 1rem 1.25rem; flex-wrap: wrap; animation: fadeSlideIn 0.4s ease both; }
+    .claim-banner-left { display: flex; align-items: center; gap: 0.85rem; }
+    .claim-banner-icon { width: 38px; height: 38px; border-radius: 10px; background: var(--accent-dim); border: 1px solid rgba(245,158,11,0.3); color: var(--accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .claim-banner-title { font-size: 0.9rem; font-weight: 600; color: var(--text); }
+    .claim-banner-sub { font-size: 0.78rem; color: var(--text-muted); font-family: var(--font-mono); margin-top: 2px; }
+
+    /* ── Swap UI (scoped) ── */
+    .swap-card { width: 100%; max-width: 460px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin: 0 auto; }
+    .swap-card .card-header { display: flex; align-items: center; justify-content: space-between; padding: 1.1rem 1.25rem; border-bottom: 1px solid var(--border); margin-bottom: 0; }
+    .swap-card .card-body { padding: 1.1rem; }
+    .token-box { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+    .token-label { font-size: 11px; font-weight: 500; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+    .token-row { display: flex; align-items: center; gap: 10px; }
+    .token-selector { display: flex; align-items: center; gap: 8px; background: var(--bg-card-2); border: 1px solid var(--border-light); border-radius: 8px; padding: 8px 12px; cursor: pointer; white-space: nowrap; position: relative; }
+    .token-selector:hover { border-color: var(--accent); }
+    .token-icon { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 8px; font-weight: 700; flex-shrink: 0; }
+    .token-name { font-size: 14px; font-weight: 600; color: var(--text); }
+    .chevron-icon { color: var(--text-dim); }
+    .amount-input { flex: 1; background: none; border: none; outline: none; font-family: var(--font-mono); font-size: 22px; font-weight: 600; color: var(--text); text-align: right; width: 0; min-width: 0; }
+    .amount-input::placeholder { color: var(--text-dim); }
+    .token-balance { margin-top: 8px; text-align: right; font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); }
+    .token-balance span { color: var(--text-muted); cursor: pointer; }
+    .token-balance span:hover { color: var(--accent); }
+    .swap-direction { display: flex; justify-content: center; margin: 8px 0; }
+    #swapDirectionBtn { background: var(--bg-card-2); border: 1px solid var(--border-light); border-radius: 8px; padding: 7px 10px; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; transition: all 0.15s; }
+    #swapDirectionBtn:hover { border-color: var(--accent); color: var(--accent); transform: rotate(180deg); }
+    .quote-info { margin-top: 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+    .quote-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+    .quote-row .label { color: var(--text-muted); }
+    .quote-row .value { font-family: var(--font-mono); font-size: 12px; color: var(--text); font-weight: 500; }
+    .price-impact-low { color: var(--success); }
+    .price-impact-med { color: var(--accent); }
+    .price-impact-high { color: var(--error); }
+
+    #swapExecuteBtn { width: 100%; max-width: 460px; display: block; margin: 0 auto; padding: 15px; background: var(--accent); border: none; border-radius: 12px; font-family: inherit; font-size: 15px; font-weight: 700; color: #05080f; cursor: pointer; transition: all 0.15s; }
+    #swapExecuteBtn:hover:not(:disabled) { background: var(--accent-hover); transform: translateY(-1px); }
+    #swapExecuteBtn:disabled { background: var(--bg-card-2); color: var(--text-dim); cursor: not-allowed; border: 1px solid var(--border-light); }
+    .btn-inner { display: flex; align-items: center; justify-content: center; gap: 8px; }
+    #swapBtnSpinner { width: 16px; height: 16px; border: 2px solid rgba(0,0,0,0.3); border-top-color: #05080f; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+    #swapStatusPanel { width: 100%; max-width: 460px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: none; margin: 16px auto; }
+    #swapStatusPanel.visible { display: block; }
+    .status-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+    .status-dot.success { background: var(--success); }
+    .status-dot.error { background: var(--error); }
+    .status-dot.pending { animation: pulse 1.2s ease-in-out infinite; }
+    .status-title { font-size: 13px; font-weight: 600; color: var(--text); }
+    .status-msg { font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 10px; }
+    .status-msg.error-msg { color: var(--error); }
+    #swapTxLink { font-family: var(--font-mono); font-size: 11px; color: var(--accent); text-decoration: none; word-break: break-all; background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.15); border-radius: 6px; padding: 8px 10px; display: none; }
+    #onrampConfirmBtn { width: 100%; max-width: 460px; display: block; margin: 1rem auto 0; padding: 15px; background: var(--accent); border: none; border-radius: 12px; font-family: inherit; font-size: 15px; font-weight: 700; color: #05080f; cursor: pointer; transition: all 0.15s; }
+    #onrampConfirmBtn:hover:not(:disabled) { background: var(--accent-hover); transform: translateY(-1px); }
+    #onrampConfirmBtn:disabled { background: var(--bg-card-2); color: var(--text-dim); cursor: not-allowed; border: 1px solid var(--border-light); }
+    #onrampStatusPanel { width: 100%; max-width: 460px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: none; margin: 16px auto; }
+    #onrampStatusPanel.visible { display: block; }
+    .onramp-mode-btn { padding: 0.4rem 0.9rem; font-size: 0.875rem; font-weight: 500; color: var(--text-muted); background: none; border: 1px solid transparent; border-radius: 8px; cursor: pointer; transition: all 0.15s; }
+    .onramp-mode-btn:hover { color: var(--text); }
+    .onramp-mode-btn.active { color: var(--accent); background: var(--accent-dim); border-color: rgba(245,158,11,0.25); }
+    .onboarding-banner { background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(245,158,11,0.03)); border-bottom: 1px solid rgba(245,158,11,0.2); animation: fadeSlideIn 0.35s ease both; }
+    .onboarding-banner-inner { display: flex; align-items: flex-start; gap: 0.85rem; padding: 0.9rem 0; }
+    .onboarding-banner-icon { width: 34px; height: 34px; border-radius: 10px; background: var(--accent-dim); border: 1px solid rgba(245,158,11,0.3); color: var(--accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .onboarding-banner-title { font-size: 0.9rem; font-weight: 600; color: var(--text); margin-bottom: 0.2rem; }
+    .onboarding-banner-sub { font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; }
+    .onboarding-banner-actions { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; margin-left: auto; padding-top: 0.1rem; }
+    .onboarding-banner-dismiss { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0.4rem; border-radius: 6px; display: flex; align-items: center; }
+    .onboarding-banner-dismiss:hover { color: var(--text); background: var(--border); }
+    @media (max-width: 640px) { .onboarding-banner-inner { flex-wrap: wrap; } .onboarding-banner-actions { margin-left: 0; width: 100%; justify-content: space-between; } }
+    .token-dropdown { position: absolute; top: calc(100% + 6px); left: 0; background: var(--bg-card-2); border: 1px solid var(--border-light); border-radius: 10px; overflow: hidden; z-index: 100; box-shadow: var(--shadow-lg); min-width: 160px; display: none; }
+    .token-dropdown.open { display: block; }
+    .token-option { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text); }
+    .token-option:hover { background: var(--border); }
+    .token-option.selected { color: var(--accent); }
+    .history-card, .balance-card { width: 100%; max-width: 460px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin: 16px auto 0; }
+    .history-header, .balance-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .history-title, .balance-title { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .history-title svg, .balance-title svg { color: var(--accent); }
+    #clearHistoryBtn, #swapCheckBalanceBtn { font-family: inherit; font-size: 11px; color: var(--text-dim); background: none; border: none; cursor: pointer; padding: 4px 8px; border-radius: 5px; }
+    #swapCheckBalanceBtn { font-size: 12px; color: var(--accent); background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.15); padding: 5px 12px; }
+    .history-empty { font-size: 12px; color: var(--text-dim); text-align: center; padding: 12px 0; font-family: var(--font-mono); }
+    .history-list { display: flex; flex-direction: column; gap: 6px; max-height: 240px; overflow-y: auto; }
+    .history-item { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 5px; }
+    .history-item-top { display: flex; justify-content: space-between; align-items: center; }
+    .history-swap-label { font-size: 13px; font-weight: 600; color: var(--text); }
+    .history-swap-label span { color: var(--accent); }
+    .history-status { font-size: 10px; font-weight: 600; letter-spacing: 0.5px; padding: 2px 7px; border-radius: 10px; }
+    .history-status.confirmed { background: rgba(16,185,129,0.1); color: var(--success); }
+    .history-item-bottom { display: flex; justify-content: space-between; align-items: center; }
+    .history-time { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); }
+    .history-link { font-family: var(--font-mono); font-size: 10px; color: var(--accent); text-decoration: none; }
+    .balance-list { display: flex; flex-direction: column; gap: 6px; }
+    .balance-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: var(--bg); border-radius: 8px; border: 1px solid var(--border); }
+    .balance-token { font-size: 12px; color: var(--text-muted); }
+    .balance-amount { font-family: var(--font-mono); font-size: 13px; font-weight: 500; color: var(--text); }
+
+    @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <!-- ── Navbar ── -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <defs>
+            <linearGradient id="navShieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#F4C752"/>
+              <stop offset="100%" stop-color="#C68A15"/>
+            </linearGradient>
+          </defs>
+          <rect width="28" height="28" rx="8" fill="#f59e0b" fill-opacity="0.15"/>
+          <path d="M14 6.5 L20 9 V14 C20 18.5 17.5 21.5 14 23 C10.5 21.5 8 18.5 8 14 V9 Z"
+                fill="none" stroke="url(#navShieldGrad)" stroke-width="1.5"/>
+          <path d="M10.5 15 H17.5" stroke="url(#navShieldGrad)" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M15 11.5 L18.5 15 L15 18.5" fill="none" stroke="url(#navShieldGrad)" stroke-width="1.5"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="nav-logo-text">Veil<span>Pay</span></span>
+      </a>
+      <div class="nav-actions">
+        <span id="walletAddressDisplay" class="wallet-address" style="display:none;"></span>
+        <button id="connectWalletBtn" class="btn btn-primary btn-sm" onclick="handleConnectWallet()">
+          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 12a2 2 0 0 0 0 4h4v-4h-4z"/>
+          </svg>
+          Connect Wallet
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Stats Bar ── -->
+  <div class="stats-bar">
+    <div class="container">
+      <div class="stat-item">
+        <div class="stat-label">Total Invoices</div>
+        <div class="stat-value accent" id="statTotal">0</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Paid</div>
+        <div class="stat-value success" id="statPaid">0</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Pending</div>
+        <div class="stat-value" id="statPending">0</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Total Earned</div>
+        <div class="stat-value accent" id="statEarned">0.00 USDC</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Page Header + Tabs ── -->
+  <div class="page-header">
+    <div class="container">
+      <div class="page-header-inner">
+        <div>
+          <div class="page-title">Dashboard</div>
+          <div class="page-subtitle">Create invoices, swap tokens, buy or cash out naira, and track payments.</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.4rem;font-size:0.75rem;color:var(--text-muted);padding-top:0.25rem;">
+          <span style="width:6px;height:6px;border-radius:50%;background:#10b981;display:inline-block;flex-shrink:0;"></span>
+          Solana Mainnet
+        </div>
+      </div>
+      <div class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('invoices', this)">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+          </svg>
+          Invoices
+          <span id="tabInvoiceCount" class="tab-badge" style="display:none;">0</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('swap', this)">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path d="M7 16V4m0 0L3 8m4-4l4 4"/><path d="M17 8v12m0 0l4-4m-4 4l-4-4"/>
+          </svg>
+          Token Swap
+        </button>
+        <button class="tab-btn" onclick="switchTab('onramp', this)">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+          Buy / Cash Out
+          <span style="font-size:0.65rem;background:var(--accent-dim);color:var(--accent);padding:1px 6px;border-radius:6px;margin-left:4px;font-weight:600;">SOON</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('subscriptions', this)">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+          </svg>
+          Recurring
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── First-Run Guidance Banner ── -->
+  <div id="onboardingBanner" class="onboarding-banner" style="display:none;">
+    <div class="container">
+      <div class="onboarding-banner-inner">
+        <div class="onboarding-banner-icon">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
+          </svg>
+        </div>
+        <div class="onboarding-banner-text">
+          <div class="onboarding-banner-title">Wallet connected. Here's what to do next</div>
+          <div class="onboarding-banner-sub">
+            Sending an invoice? Fill in the form on this page and share the payment link it gives you.
+            Paying one? You don't do that here, open the payment link your client sent you instead.
+          </div>
+        </div>
+        <div class="onboarding-banner-actions">
+          <button class="btn btn-primary" style="padding:0.5rem 1rem;font-size:0.82rem;" onclick="VeilOnboarding.focusInvoiceForm()">Create my first invoice</button>
+          <button class="onboarding-banner-dismiss" onclick="VeilOnboarding.dismiss()" title="Dismiss" aria-label="Dismiss">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <main>
+    <div class="container">
+
+      <!-- ── TAB: Invoices ── -->
+      <div id="tab-invoices" class="tab-pane active">
+
+        <div class="invoice-form-panel">
+          <div class="card">
+            <div class="card-header">
+              <span class="panel-title">
+                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="12" y1="18" x2="12" y2="12"/>
+                  <line x1="9" y1="15" x2="15" y2="15"/>
+                </svg>
+                New Invoice
+              </span>
+            </div>
+
+            <div id="connectPrompt" class="connect-wall">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 12a2 2 0 0 0 0 4h4v-4h-4z"/>
+              </svg>
+              Connect wallet to create invoices
+            </div>
+
+            <div id="walletStrip" class="wallet-strip" style="display:none;">
+              <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 12a2 2 0 0 0 0 4h4v-4h-4z"/>
+              </svg>
+              <span id="walletStripAddr">-</span>
+            </div>
+
+            <div class="fee-notice">
+              <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              Payments settle as real USDC transfers on Solana mainnet, wallet-to-wallet, submitted via Cognata's Smart TX Stack (dynamic Jito tips + AI-assisted retries) so they land reliably even under network congestion. A 2% platform fee is taken from the transfer; you receive 98%, directly in your wallet, no separate claim step.
+            </div>
+
+            <div id="invoiceForm" class="form-disabled">
+              <div class="invoice-form-row">
+                <div class="form-group">
+                  <label class="form-label">Client Name</label>
+                  <input id="clientName" type="text" class="form-input" placeholder="e.g. Acme Corp" maxlength="80" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Due Date <span style="color:var(--text-dim);font-weight:400;">(optional)</span></label>
+                  <input id="dueDate" type="date" class="form-input" />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Line Items</label>
+                <div id="lineItemsList" class="line-items-list"></div>
+                <button type="button" class="btn btn-ghost" onclick="addLineItem()" style="margin-top:0.6rem;padding:0.45rem 0.9rem;font-size:0.8rem;">
+                  <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Add line item
+                </button>
+              </div>
+
+              <div class="line-items-total">
+                <span class="line-items-total-label">Total</span>
+                <span id="invoiceTotalDisplay" class="line-items-total-value">0.00 USDC</span>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Notes / Terms <span style="color:var(--text-dim);font-weight:400;">(optional)</span></label>
+                <textarea id="invoiceNotes" class="form-textarea" placeholder="e.g. Pay within 7 days. No partial payments." style="min-height:64px;" maxlength="300"></textarea>
+              </div>
+
+              <input id="recipientWallet" type="hidden" />
+              <button id="generateBtn" class="btn btn-primary btn-full" onclick="handleGenerateInvoice()">
+                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                </svg>
+                Generate Invoice Link
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="invoice-history-panel">
+          <div class="card">
+            <div class="card-header">
+              <span class="panel-title">
+                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+                  <line x1="8" y1="18" x2="21" y2="18"/>
+                  <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/>
+                  <line x1="3" y1="18" x2="3.01" y2="18"/>
+                </svg>
+                Your Invoices
+              </span>
+              <span id="invoiceCount" class="panel-badge" style="display:none;">0</span>
+            </div>
+            <div id="invoiceList" class="invoice-grid"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── TAB: Token Swap ── -->
+      <div id="tab-swap" class="tab-pane">
+        <div style="text-align:center;margin-bottom:1.75rem;">
+          <div class="section-eyebrow" style="margin-bottom:0.4rem;">Direct SPL Token Swaps</div>
+          <p style="font-size:0.85rem;color:var(--text-muted);max-width:480px;margin:0 auto;">
+            Swap tokens with live market quotes. Execution is coming soon. A 1% fee is included in your quote.
+          </p>
+        </div>
+
+        <div class="swap-card">
+          <div class="card-header">
+            <span class="card-title" style="margin:0;">Swap</span>
+          </div>
+          <div class="card-body">
+
+            <div class="token-box">
+              <div class="token-label">From</div>
+              <div class="token-row">
+                <div class="token-selector" id="swapFromSelector" onclick="VeilSwap.toggleDropdown('swapFrom', event)">
+                  <div class="token-icon" id="swapFromIcon" style="background:#627EEA20;color:#627EEA">SOL</div>
+                  <span class="token-name" id="swapFromName">SOL</span>
+                  <svg class="chevron-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                  <div class="token-dropdown" id="swapFromDropdown"></div>
+                </div>
+                <input class="amount-input" id="swapFromAmount" type="number" placeholder="0.00" min="0" step="any" oninput="VeilSwap.onAmountInput()">
+              </div>
+              <div class="token-balance">Balance: <span id="swapFromBalance" onclick="VeilSwap.setMax()">-</span></div>
+            </div>
+
+            <div class="swap-direction">
+              <button id="swapDirectionBtn" onclick="VeilSwap.swapDirection()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M7 16V4m0 0L3 8m4-4l4 4"/><path d="M17 8v12m0 0l4-4m-4 4l-4-4"/>
+                </svg>
+              </button>
+            </div>
+
+            <div class="token-box">
+              <div class="token-label">To</div>
+              <div class="token-row">
+                <div class="token-selector" id="swapToSelector" onclick="VeilSwap.toggleDropdown('swapTo', event)">
+                  <div class="token-icon" id="swapToIcon" style="background:#2775CA20;color:#2775CA">UDC</div>
+                  <span class="token-name" id="swapToName">USDC</span>
+                  <svg class="chevron-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                  <div class="token-dropdown" id="swapToDropdown"></div>
+                </div>
+                <div id="swapToAmount" style="flex:1;text-align:right;font-family:var(--font-mono);font-size:22px;font-weight:600;color:var(--text-dim)">-</div>
+              </div>
+              <div class="token-balance">Balance: <span id="swapToBalance">-</span></div>
+            </div>
+
+            <div class="quote-info">
+              <div class="quote-row"><span class="label">You receive (after fee)</span><span class="value" id="swapQuoteReceive">-</span></div>
+              <div class="quote-row"><span class="label">Platform fee</span><span class="value" id="swapQuoteFee">-</span></div>
+              <div class="quote-row"><span class="label">Price impact</span><span class="value" id="swapQuotePriceImpact">-</span></div>
+              <div class="quote-row"><span class="label">Route</span><span class="value" id="swapQuoteRoute">-</span></div>
+            </div>
+          </div>
+        </div>
+
+        <button id="swapExecuteBtn" disabled onclick="VeilSwap.onSwap()">
+          <div class="btn-inner">
+            <div id="swapBtnSpinner"></div>
+            <span id="swapBtnText">Connect wallet to swap</span>
+          </div>
+        </button>
+
+        <div id="swapStatusPanel">
+          <div class="status-header">
+            <div class="status-dot pending" id="swapStatusDot"></div>
+            <span class="status-title" id="swapStatusTitle">Processing</span>
+          </div>
+          <div class="status-msg" id="swapStatusMsg"></div>
+          <a id="swapTxLink" target="_blank" rel="noopener noreferrer"></a>
+        </div>
+
+        <div class="balance-card">
+          <div class="balance-header">
+            <div class="balance-title">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              Your Balances
+            </div>
+            <button id="swapCheckBalanceBtn" onclick="VeilSwap.checkBalances()">Check</button>
+          </div>
+          <div class="balance-list" id="swapBalanceList">
+            <div class="balance-item"><span class="balance-token">Connect wallet to view balances</span></div>
+          </div>
+        </div>
+
+        <div class="history-card">
+          <div class="history-header">
+            <div class="history-title">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="12 8 12 12 14 14"/><path d="M3.05 11a9 9 0 1 0 .5-4"/><polyline points="3 7 3 11 7 11"/></svg>
+              Swap History
+            </div>
+            <button id="clearHistoryBtn" onclick="VeilSwap.clearHistory()">Clear</button>
+          </div>
+          <div class="history-list" id="swapHistoryList">
+            <div class="history-empty">No swaps yet</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TAB: Buy / Cash Out (Bitnob on/off-ramp) ── -->
+      <div id="tab-onramp" class="tab-pane">
+        <div style="max-width:460px;margin:0 auto 1.25rem;text-align:center;">
+          <div class="section-eyebrow" style="margin-bottom:0.4rem;">Naira On/Off-Ramp</div>
+          <div style="color:var(--text-muted);font-size:0.9rem;">
+            Buy USDC with naira or cash out USDC to your bank/Opay account. Every quote is shown before you confirm, nothing executes automatically.
+          </div>
+        </div>
+
+        <!-- Naira ramp is mid-integration (provider-side account
+             verification still pending), showing a clear "coming soon"
+             state instead of a live form that would error out on a real
+             prospect. Flip NAIRA_RAMP_ENABLED in the script below once the
+             provider integration is confirmed working end to end, this
+             markup underneath is left fully intact and ready to go. -->
+        <div id="onrampComingSoon" class="swap-card" style="text-align:center;padding:2.75rem 1.5rem;">
+          <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:var(--accent);margin-bottom:1rem;">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M12 7v5l3 3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div style="font-weight:600;font-size:1.05rem;margin-bottom:0.5rem;">Naira ramp — coming soon</div>
+          <div style="color:var(--text-muted);font-size:0.88rem;max-width:340px;margin:0 auto;">
+            We're finishing verification with our payment partner so naira deposits and payouts are fully reliable before turning this on. Direct USDC invoicing and swaps already work today, no naira ramp needed.
+          </div>
+        </div>
+
+        <div id="onrampLiveUI" style="display:none;">
+        <div class="swap-card">
+          <div class="card-header">
+            <div style="display:flex;gap:0.4rem;">
+              <button id="onrampModeBuyBtn" class="onramp-mode-btn active" onclick="VeilOnramp.setMode('buy')">Buy USDC</button>
+              <button id="onrampModeCashoutBtn" class="onramp-mode-btn" onclick="VeilOnramp.setMode('cashout')">Cash Out</button>
+            </div>
+          </div>
+          <div class="card-body">
+
+            <!-- Buy: amount in naira -->
+            <div id="onrampBuyFields">
+              <div class="token-row">
+                <span class="token-name">You pay</span>
+                <input class="amount-input" id="onrampNGNAmount" type="number" placeholder="0.00" min="0" step="any" oninput="VeilOnramp.onAmountInput()">
+                <span class="token-name">NGN</span>
+              </div>
+            </div>
+
+            <!-- Cash out: amount in USDC + bank details -->
+            <div id="onrampCashoutFields" style="display:none;">
+              <div class="token-row">
+                <span class="token-name">You send</span>
+                <input class="amount-input" id="onrampUSDCAmount" type="number" placeholder="0.00" min="0" step="any" oninput="VeilOnramp.onAmountInput()">
+                <span class="token-name">USDC</span>
+              </div>
+              <div style="margin-top:0.75rem;display:flex;flex-direction:column;gap:0.5rem;">
+                <input class="amount-input" id="onrampBankAccount" type="text" placeholder="Bank account number" style="font-size:14px;">
+                <input class="amount-input" id="onrampBankCode" type="text" placeholder="Bank code (e.g. Opay, GTBank)" style="font-size:14px;">
+              </div>
+            </div>
+
+            <div class="quote-panel" style="margin-top:1rem;">
+              <div class="quote-row"><span class="label" id="onrampReceiveLabel">You receive</span><span class="value" id="onrampReceiveAmount">-</span></div>
+              <div class="quote-row"><span class="label">Rate</span><span class="value" id="onrampRate">-</span></div>
+              <div class="quote-row"><span class="label">Fees</span><span class="value" id="onrampFees">-</span></div>
+              <div class="quote-row"><span class="label">Quote expires</span><span class="value" id="onrampExpiry">-</span></div>
+            </div>
+          </div>
+        </div>
+
+        <button id="onrampConfirmBtn" disabled onclick="VeilOnramp.onConfirm()">
+          <div style="display:flex;align-items:center;justify-content:center;gap:0.5rem;">
+            <div id="onrampBtnSpinner" style="width:16px;height:16px;border:2px solid rgba(0,0,0,0.3);border-top-color:#05080f;border-radius:50%;animation:spin 0.7s linear infinite;display:none;"></div>
+            <span id="onrampBtnText">Enter an amount to get a quote</span>
+          </div>
+        </button>
+
+        <div id="onrampStatusPanel">
+          <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:6px;">
+            <div class="status-dot pending" id="onrampStatusDot"></div>
+            <span class="status-title" id="onrampStatusTitle">Processing</span>
+          </div>
+          <div class="status-msg" id="onrampStatusMsg"></div>
+        </div>
+        </div>
+      </div>
+
+      <!-- ── TAB: Subscriptions ── -->
+      <div id="tab-subscriptions" class="tab-pane">
+        <div class="dashboard-layout">
+          <div>
+            <div class="card" style="position:sticky;top:80px;">
+              <div class="card-header">
+                <span class="panel-title">
+                  <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                  </svg>
+                  New Recurring Invoice
+                </span>
+              </div>
+              <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1.1rem;line-height:1.6;">
+                Set up a repeating invoice for retainer clients. A new invoice link is generated each cycle.
+              </p>
+              <div class="fee-notice">
+                <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                The same 2% platform fee applies to each generated invoice in this series.
+              </div>
+              <div id="subConnectPrompt" class="connect-wall" style="display:none;">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 12a2 2 0 0 0 0 4h4v-4h-4z"/>
+                </svg>
+                Connect wallet to create subscriptions
+              </div>
+              <div class="form-group">
+                <label class="form-label">Client Name</label>
+                <input id="subClientName" type="text" class="form-input" placeholder="e.g. Acme Corp" maxlength="80" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Service Description</label>
+                <textarea id="subDesc" class="form-textarea" placeholder="e.g. Monthly retainer, design services" style="min-height:78px;" maxlength="300"></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Amount (USDC)</label>
+                <input id="subAmount" type="number" class="form-input" placeholder="0.00" min="0.01" step="0.01" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Billing Cycle</label>
+                <select id="subInterval" class="form-input">
+                  <option value="7">Weekly (every 7 days)</option>
+                  <option value="14">Biweekly (every 14 days)</option>
+                  <option value="30" selected>Monthly (every 30 days)</option>
+                  <option value="90">Quarterly (every 90 days)</option>
+                </select>
+              </div>
+              <button class="btn btn-primary btn-full" onclick="handleCreateSubscription()">
+                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                </svg>
+                Create Recurring Invoice
+              </button>
+            </div>
+          </div>
+          <div>
+            <div class="card">
+              <div class="card-header">
+                <span class="panel-title">
+                  <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+                    <line x1="8" y1="18" x2="21" y2="18"/>
+                    <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/>
+                    <line x1="3" y1="18" x2="3.01" y2="18"/>
+                  </svg>
+                  Active Subscriptions
+                </span>
+              </div>
+              <div id="subList" class="invoice-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ── Footer ── -->
+  <footer>
+    <div class="container">
+      <span class="footer-text">Cognata. Direct payments and swaps on Solana</span>
+      <div class="footer-links">
+        <a href="privacy.html">Privacy</a>
+        <span class="footer-dot">·</span>
+        <a href="tos.html">Terms</a>
+      </div>
+      <span class="footer-brand">Made by TJS Code</span>
+    </div>
+  </footer>
+
+  <!-- ── Modal: Invoice Created ── -->
+  <div class="modal-overlay" id="invoiceModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">Invoice Created</div>
+          <div style="font-size:0.82rem;color:var(--text-muted);margin-top:3px;">Share this link with your client to collect payment.</div>
+        </div>
+        <button class="modal-close" onclick="Cognata.closeModal('invoiceModal')">
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="success-row">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Invoice saved and payment link generated.
+      </div>
+      <div class="share-link-wrap">
+        <div class="share-link-label">Payment Link</div>
+        <div id="modalPayLink" class="share-url">-</div>
+      </div>
+      <div class="share-actions">
+        <button id="copyLinkBtn" class="btn btn-primary" onclick="handleCopyModalLink()" style="flex:1;position:relative;">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+          Copy Link
+        </button>
+        <button class="btn btn-ghost" onclick="handleWhatsApp()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#10b981">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+            <path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.554 4.103 1.524 5.83L.057 23.885a.5.5 0 0 0 .607.606l6.109-1.457A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 0 1-4.989-1.363l-.358-.213-3.705.884.9-3.613-.234-.371A9.818 9.818 0 0 1 2.182 12C2.182 6.564 6.564 2.182 12 2.182S21.818 6.564 21.818 12 17.436 21.818 12 21.818z"/>
+          </svg>
+          WhatsApp
+        </button>
+      </div>
+      <div class="divider"></div>
+      <button class="btn btn-ghost btn-full" onclick="Cognata.closeModal('invoiceModal')">Done</button>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+  <script src="wallet-adapter.js"></script>
+  <script src="payment-transfer.js"></script>
+  <script src="smart-tx.js"></script>
+  <script src="veil-engine.js"></script>
+  <script src="app.js"></script>
+  <script src="swap.js"></script>
+  <script src="bitnob.js"></script>
+  <script>
+    let currentModalLink  = '';
+    let currentInvoice    = null;
+    let swapInitialized   = false;
+    let onrampInitialized = false;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      restoreWalletState();
+      renderInvoiceList();
+      updateStats();
+    });
+
+    function switchTab(name, btn) {
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('tab-' + name).classList.add('active');
+      btn.classList.add('active');
+      if (name === 'swap' && !swapInitialized) {
+        VeilSwap.init();
+        swapInitialized = true;
+      }
+      if (name === 'onramp' && !onrampInitialized) {
+        VeilOnramp.init();
+        onrampInitialized = true;
+      }
+    }
+
+    function updateStats() {
+      const invoices = Cognata.getAllInvoices();
+      const paid     = invoices.filter(i => i.status === 'paid');
+      const pending  = invoices.filter(i => i.status === 'pending');
+      const earned   = paid.reduce((s, i) => s + Number(i.amount || 0), 0);
+      document.getElementById('statTotal').textContent   = invoices.length;
+      document.getElementById('statPaid').textContent    = paid.length;
+      document.getElementById('statPending').textContent = pending.length;
+      document.getElementById('statEarned').textContent  = earned.toFixed(2) + ' USDC';
+      const cnt = document.getElementById('tabInvoiceCount');
+      if (invoices.length > 0) { cnt.textContent = invoices.length; cnt.style.display = 'inline'; }
+      else cnt.style.display = 'none';
+    }
+
+    async function restoreWalletState() {
+      const wallet = Cognata.WalletState.get();
+      if (!wallet?.publicKey) return;
+      applyWalletConnected(wallet); // show cached state immediately, no flash of "disconnected"
+      const live = await Cognata.reconnectWalletSilently(wallet.walletName);
+      if (live) {
+        Cognata.WalletState.set(live);
+        applyWalletConnected(live);
+      }
+    }
+
+    // ── First-run guidance ──
+    const VeilOnboarding = (() => {
+      const DISMISS_KEY = 'veilpay_onboarding_dismissed';
+
+      function check() {
+        const wallet = Cognata.WalletState.get();
+        const alreadyDismissed = localStorage.getItem(DISMISS_KEY) === 'true';
+        const hasInvoices = Cognata.getAllInvoices().length > 0;
+        const banner = document.getElementById('onboardingBanner');
+        if (!banner) return;
+        if (wallet?.publicKey && !alreadyDismissed && !hasInvoices) {
+          banner.style.display = 'block';
+        } else {
+          banner.style.display = 'none';
+        }
+      }
+
+      function dismiss() {
+        localStorage.setItem(DISMISS_KEY, 'true');
+        document.getElementById('onboardingBanner').style.display = 'none';
+      }
+
+      function focusInvoiceForm() {
+        dismiss();
+        document.querySelector('.tab-btn.active')?.classList.remove('active');
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        document.getElementById('tab-invoices').classList.add('active');
+        document.querySelectorAll('.tab-btn')[0]?.classList.add('active');
+        const field = document.getElementById('clientName');
+        field?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        field?.focus();
+      }
+
+      return { check, dismiss, focusInvoiceForm };
+    })();
+
+    // ── Line items ──
+    function addLineItem(desc, amount) {
+      const list = document.getElementById('lineItemsList');
+      const row = document.createElement('div');
+      row.className = 'line-item-row';
+      row.innerHTML = `
+        <input type="text" class="form-input line-item-desc" placeholder="e.g. Landing page design" maxlength="120" value="${desc ? desc.replace(/"/g, '&quot;') : ''}" oninput="recalcInvoiceTotal()" />
+        <input type="number" class="form-input line-item-amount" placeholder="0.00" min="0.01" step="0.01" value="${amount || ''}" oninput="recalcInvoiceTotal()" />
+        <button type="button" class="line-item-remove" onclick="removeLineItem(this)" aria-label="Remove line item" title="Remove">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      `;
+      list.appendChild(row);
+      recalcInvoiceTotal();
+    }
+
+    function removeLineItem(btn) {
+      const list = document.getElementById('lineItemsList');
+      if (list.children.length <= 1) return; // always keep at least one row
+      btn.closest('.line-item-row').remove();
+      recalcInvoiceTotal();
+    }
+
+    function getLineItems() {
+      return Array.from(document.querySelectorAll('#lineItemsList .line-item-row')).map(row => ({
+        description: row.querySelector('.line-item-desc').value.trim(),
+        amount: parseFloat(row.querySelector('.line-item-amount').value) || 0,
+      })).filter(item => item.description && item.amount > 0);
+    }
+
+    function recalcInvoiceTotal() {
+      const total = getLineItems().reduce((sum, item) => sum + item.amount, 0);
+      document.getElementById('invoiceTotalDisplay').textContent = `${total.toFixed(2)} USDC`;
+      return total;
+    }
+
+    function resetLineItems() {
+      document.getElementById('lineItemsList').innerHTML = '';
+      addLineItem();
+    }
+
+    async function handleConnectWallet() {
+      await Cognata.connectWalletUI({
+        onSuccess(wallet) {
+          applyWalletConnected(wallet);
+          Cognata.showToast(`Connected: ${wallet.walletName} (${wallet.truncated})`, 'green');
+        },
+      });
+    }
+
+    function applyWalletConnected(wallet) {
+      const btn = document.getElementById('connectWalletBtn');
+      const disp = document.getElementById('walletAddressDisplay');
+      btn.style.display = 'none';
+      disp.style.display = 'block';
+      disp.textContent = wallet.truncated || Cognata.truncateWallet(wallet.publicKey);
+      document.getElementById('recipientWallet').value = wallet.publicKey;
+      document.getElementById('invoiceForm').classList.remove('form-disabled');
+      document.getElementById('connectPrompt').style.display = 'none';
+      document.getElementById('walletStrip').style.display = 'flex';
+      document.getElementById('walletStripAddr').textContent = wallet.truncated || Cognata.truncateWallet(wallet.publicKey);
+
+      if (window.VeilSwap) {
+        VeilSwap.syncWallet(wallet.publicKey);
+        const swapBtn = document.getElementById('swapExecuteBtn');
+        if (swapBtn) {
+          swapBtn.disabled = false;
+          document.getElementById('swapBtnText').textContent = 'Swap';
+        }
+        if (swapInitialized) VeilSwap.init();
+      }
+
+      VeilOnboarding.check();
+    }
+
+    async function handleGenerateInvoice() {
+      const clientName = document.getElementById('clientName').value.trim();
+      const dueDate    = document.getElementById('dueDate').value;
+      const notes      = document.getElementById('invoiceNotes').value.trim();
+      const lineItems  = getLineItems();
+      const amount     = lineItems.reduce((sum, item) => sum + item.amount, 0);
+      const wallet     = document.getElementById('recipientWallet').value.trim();
+      // description kept for backward-compat display (WhatsApp share text,
+      // anywhere still reading invoice.description directly): a plain-text
+      // summary derived from the line items, not a separately-typed field.
+      const description = lineItems.map(item => item.description).join('; ');
+
+      if (!clientName)            return Cognata.showToast('Enter a client name.', 'red');
+      if (!lineItems.length)      return Cognata.showToast('Add at least one line item with a description and amount.', 'red');
+      if (!amount || amount <= 0) return Cognata.showToast('Line item amounts must add up to more than 0.', 'red');
+      if (!wallet)                return Cognata.showToast('Connect your wallet first.', 'red');
+
+      const btn = document.getElementById('generateBtn');
+      btn.disabled = true;
+      btn.innerHTML = `<span class="spinner" style="width:15px;height:15px;"></span> Generating...`;
+      try {
+        const invoiceId = Cognata.generateUUID();
+        const now = new Date().toISOString();
+        const result = await VeilEngine.createPrivatePayment({ amount, recipientWallet: wallet, invoiceId, description });
+        const invoice = {
+          id: invoiceId, clientName, description, lineItems, dueDate: dueDate || null, notes: notes || null,
+          amount, recipientWallet: wallet, status: 'pending', createdAt: now, paymentId: result.paymentId, payLink: result.link,
+        };
+        Cognata.saveInvoice(invoice);
+        currentInvoice   = invoice;
+        currentModalLink = result.link;
+        document.getElementById('modalPayLink').textContent = result.link;
+        renderInvoiceList();
+        updateStats();
+        VeilOnboarding.check();
+        Cognata.openModal('invoiceModal');
+        Cognata.showToast('Invoice created!', 'green');
+        document.getElementById('clientName').value = '';
+        document.getElementById('dueDate').value = '';
+        document.getElementById('invoiceNotes').value = '';
+        resetLineItems();
+        const w = Cognata.WalletState.get();
+        if (w?.publicKey) document.getElementById('recipientWallet').value = w.publicKey;
+      } catch (err) {
+        Cognata.showToast('Failed: ' + (err.message || 'Unknown error'), 'red');
+      }
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Generate Invoice Link`;
+    }
+
+    function handleCopyModalLink() {
+      if (currentModalLink) Cognata.copyToClipboard(currentModalLink, document.getElementById('copyLinkBtn'));
+    }
+    function handleWhatsApp() {
+      if (!currentInvoice) return;
+      Cognata.shareViaWhatsApp(currentModalLink, currentInvoice.clientName, Cognata.formatAmount(currentInvoice.amount));
+    }
+
+    function renderInvoiceList() {
+      const container = document.getElementById('invoiceList');
+      const countEl   = document.getElementById('invoiceCount');
+      const invoices  = Cognata.getAllInvoices();
+      if (invoices.length === 0) {
+        container.innerHTML = Cognata.renderEmptyState();
+        countEl.style.display = 'none';
+      } else {
+        countEl.textContent = invoices.length;
+        countEl.style.display = 'inline';
+        container.innerHTML = invoices.map(inv => Cognata.renderInvoiceCard(inv, inv.payLink)).join('');
+      }
+    }
+
+    function renderSubList() {
+      const container = document.getElementById('subList');
+      const subs = Cognata.getAllSubscriptions();
+      if (subs.length === 0) {
+        container.innerHTML = Cognata.renderEmptyState();
+      } else {
+        container.innerHTML = subs.map(s => Cognata.renderSubscriptionCard(s)).join('');
+      }
+    }
+
+    function handleCreateSubscription() {
+      const wallet = Cognata.WalletState.get();
+      if (!wallet?.publicKey) return Cognata.showToast('Connect your wallet first.', 'red');
+      const clientName   = document.getElementById('subClientName').value.trim();
+      const description  = document.getElementById('subDesc').value.trim();
+      const amount       = parseFloat(document.getElementById('subAmount').value);
+      const intervalDays = parseInt(document.getElementById('subInterval').value);
+      if (!clientName)            return Cognata.showToast('Enter a client name.', 'red');
+      if (!description)           return Cognata.showToast('Enter a description.', 'red');
+      if (!amount || amount <= 0) return Cognata.showToast('Enter a valid amount.', 'red');
+      Cognata.createSubscription({ clientName, description, amount, recipientWallet: wallet.publicKey, intervalDays });
+      renderSubList();
+      Cognata.showToast('Recurring invoice created!', 'green');
+      document.getElementById('subClientName').value = '';
+      document.getElementById('subDesc').value = '';
+      document.getElementById('subAmount').value = '';
+    }
+
+    window.handleDisputeInvoice = async function(id) {
+      const reason = prompt('Reason for dispute (optional):') || '';
+      await Cognata.flagDispute(id, reason);
+      renderInvoiceList();
+      updateStats();
+      Cognata.showToast('Invoice marked as disputed.', 'amber');
+    };
+
+    window.handleResolveDispute = async function(id) {
+      await Cognata.resolveDispute(id);
+      renderInvoiceList();
+      updateStats();
+      Cognata.showToast('Dispute resolved.', 'green');
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderSubList();
+      addLineItem();
+    });
+  </script>
+</body>
+</html>
