@@ -9,7 +9,8 @@
 //
 // DUAL-SEND, not sequential fallback (fixed Aug 2026, see incident
 // below). Submits the SAME signed transaction (same blockhash, same
-// signature) to Jito AND plain Helius RPC concurrently. This is safe:
+// signature) to Jito AND the plain RPC endpoint concurrently (see
+// lib/rpcClient.js for how that endpoint is resolved). This is safe:
 // it's one transaction either way, so it lands once or not at all,
 // there is no double-charge risk, and _waitForSafeRetry client-side
 // still governs actual retries with a genuinely new transaction.
@@ -26,6 +27,8 @@
 // landing paths from the start, every time.
 //
 // Made by TJS Code
+
+const { getRpcUrl } = require('../../lib/rpcClient');
 
 const JITO_BUNDLES_URL = 'https://mainnet.block-engine.jito.wtf/api/v1/bundles';
 
@@ -49,9 +52,8 @@ async function submitViaJito(signedTxBase64) {
 }
 
 async function submitViaRpc(signedTxBase64) {
-  const apiKey = process.env.HELIUS_API_KEY;
-  if (!apiKey) throw new Error('HELIUS_API_KEY not set, cannot submit via RPC');
-  const res = await fetch(`https://mainnet.helius-rpc.com/?api-key=${apiKey}`, {
+  const rpcUrl = getRpcUrl();
+  const res = await fetch(rpcUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
