@@ -138,15 +138,47 @@ Asked via `ask_user_input_v0`, three questions, user answered:
    Implemented as `migrationQuoteThreshold: 100` in the POC config and as the default
    `goalAmountUsdc` in `POC_GOAL` inside `src/run-poc.ts`.
 
-### 4.3 A decision flagged but not resolved
+### 4.3 Treasury address: resolved in principle, blocked on deploy in practice
 
-`dbcConfig.creator` / `feeClaimer` / `leftoverReceiver` need to resolve to an address. For a
-family or community goal, using an individual member's personal wallet would give that one
-person permanent control over the graduated pool's locked liquidity. Recommended in
-`README.md` that this be a PDA or multisig scoped to the goal, owned by the merged
-Cognata/VeilPay program, rather than a personal wallet. Not resolved, since it depends on
-account/program architecture from the other side of the merge. Left as
-`REPLACE_WITH_GOAL_TREASURY_ADDRESS` placeholders throughout.
+Updated from the earlier open item. `ACCOUNTS.md` (Session A, root of repo) now answers this:
+
+- It's a PDA, `seeds = [b"treasury"]` under the Cognata program ID. Not a personal wallet, not
+  a multisig keypair, no private key at all.
+- Its associated token account (ATA, owner = the PDA, mint = whichever token) is where funds
+  land. Any SPL transfer can send tokens in without the PDA signing.
+- Funds only leave via the program's `claim_fees` instruction, gated to `fee_config.admin`
+  (must be a multisig at `init_fee_config` time, per `ACCOUNTS.md`, not a personal keypair).
+- `ACCOUNTS.md` explicitly recommends reusing this same PDA for the DBC treasury rather than
+  deriving a second one, unless the two fee streams need to stay legally/operationally
+  separate. No such reason has come up, so `goal-token-dbc` follows that guidance: one PDA,
+  reused, not a second derivation.
+
+This closes the *design* question from 4.1/4.3: no more open question about whether to use a
+personal wallet, a second PDA, or something else. It does not close the *value* question yet.
+
+**Why the config still has placeholders instead of a real address.** `ACCOUNTS.md` states the
+Cognata program ID (`6apQZUxBwpBbFNiBpYzGeMBQJ8328xrrsQ3aRcQhM2Av`, in `Anchor.toml` and
+`declare_id!`) is a pre-deploy placeholder, and that `anchor keys sync` will change it at first
+real deploy. PDA derivation is deterministic given a program ID, but a PDA derived against a
+placeholder ID is not a preview of the real address, it is simply a different, wrong address
+that happens to compute cleanly. Filling it in now would look resolved without being resolved.
+Consistent with the discipline through the rest of this log (flag over guess), the three fields
+are left as explicit `CANNOT_RESOLVE_UNTIL_DEPLOY__see_PROCESS_LOG_4.3` markers in
+`studio-config/dbc_config.goal-token.jsonc`, not a computed value.
+
+**Exact derivation to run once the real program ID exists** (JS, matches
+`payment-transfer.js` -> `getTreasuryPda()` per `ACCOUNTS.md`):
+
+```js
+const [treasuryPda] = web3.PublicKey.findProgramAddressSync(
+  [new TextEncoder().encode('treasury')],
+  new web3.PublicKey(COGNATA_PROGRAM_ID), // the real, post-deploy ID, not the placeholder
+);
+```
+
+Then `leftoverReceiver`, `feeClaimer`, and `dbcPool.creator` all take that same
+`treasuryPda.toBase58()` value, no separate derivation for `dbcPool.creator`. This is a five
+minute fill-in once deploy happens, not a design decision, tracked as step 3 in section 6.
 
 ---
 
@@ -230,9 +262,12 @@ Zip copied to `/mnt/user-data/outputs/goal-token-dbc.zip` and presented.
    single riskiest unverified piece and was called out as the priority in the original task.
 2. **Fix `extractBaseMint()` in `run-poc.ts`** once you see real `dbc-create-pool` output. The
    current regex is a guess.
-3. **Resolve the treasury address question** (section 4.3 above) once Session A's
-   account/program architecture is known. Every `REPLACE_WITH_GOAL_TREASURY_ADDRESS` placeholder
-   depends on this.
+3. **Fill in the treasury address once the Cognata program is deployed.** No longer an open
+   design question, see section 4.3: it's the Treasury PDA (`seeds = [b"treasury"]`, Cognata
+   program ID), reused, not a second derivation. Only blocked on the real post-deploy program
+   ID existing. Run the derivation in section 4.3, drop the result into `leftoverReceiver`,
+   `feeClaimer`, and `dbcPool.creator` in `studio-config/dbc_config.goal-token.jsonc`, replacing
+   the three `CANNOT_RESOLVE_UNTIL_DEPLOY__see_PROCESS_LOG_4.3` markers.
 4. **Resolve the `creatorTradingFeePercentage` placeholder** (currently 50, explicitly flagged
    as not a real decision) once there's a product call on the platform/creator fee split.
 5. **Pull in the actual `/areas/crypto-worlds-fair.md`, `/areas/veilpay.md`,

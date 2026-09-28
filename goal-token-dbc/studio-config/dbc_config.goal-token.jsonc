@@ -77,12 +77,20 @@
 
     "activationType": 1, // timestamp
 
-    "leftoverReceiver": "REPLACE_WITH_GOAL_TREASURY_ADDRESS",
-    "feeClaimer": "REPLACE_WITH_GOAL_TREASURY_ADDRESS"
+    // Treasury address resolved in principle, blocked on deploy in practice. Per ACCOUNTS.md
+    // (Cognata program, root of repo): this is the Treasury PDA, seeds = [b"treasury"] under the
+    // Cognata program ID. Reuse it here rather than deriving a second DBC-specific PDA, per
+    // ACCOUNTS.md's own guidance ("Why this is the answer for the DBC treasury too").
+    // Not filled in below because the program ID in ACCOUNTS.md is an explicit pre-deploy
+    // placeholder (`anchor keys sync` will change it). Deriving the PDA against a placeholder ID
+    // would produce an address that goes stale at deploy, not a real one. See PROCESS_LOG.md
+    // section 4.3 for the full resolution note and the exact derivation to run once deployed.
+    "leftoverReceiver": "CANNOT_RESOLVE_UNTIL_DEPLOY__see_PROCESS_LOG_4.3",
+    "feeClaimer": "CANNOT_RESOLVE_UNTIL_DEPLOY__see_PROCESS_LOG_4.3"
   },
 
   "dbcPool": {
-    "creator": "REPLACE_WITH_GOAL_TREASURY_ADDRESS",
+    "creator": "CANNOT_RESOLVE_UNTIL_DEPLOY__see_PROCESS_LOG_4.3",
     "name": "GOAL_TOKEN_NAME",
     "symbol": "GOALSYM",
     "metadata": {
