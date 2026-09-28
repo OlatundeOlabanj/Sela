@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Page Not Found, Cognata</title>
-  <meta name="description" content="This page doesn't exist. Head back to Cognata to create or pay an invoice." />
+  <title>Page Not Found, Sela</title>
+  <meta name="description" content="This page doesn't exist. Head back to Sela to create or pay an invoice." />
   <meta name="robots" content="noindex" />
   <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
@@ -26,21 +26,19 @@
   <nav class="navbar">
     <div class="container">
       <a href="index.html" class="nav-logo">
-        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
           <defs>
-            <linearGradient id="navShieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <linearGradient id="navSelaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stop-color="#F4C752"/>
               <stop offset="100%" stop-color="#C68A15"/>
             </linearGradient>
           </defs>
           <rect width="28" height="28" rx="8" fill="#f59e0b" fill-opacity="0.15"/>
-          <path d="M14 6.5 L20 9 V14 C20 18.5 17.5 21.5 14 23 C10.5 21.5 8 18.5 8 14 V9 Z"
-                fill="none" stroke="url(#navShieldGrad)" stroke-width="1.5"/>
-          <path d="M10.5 15 H17.5" stroke="url(#navShieldGrad)" stroke-width="1.5" stroke-linecap="round"/>
-          <path d="M15 11.5 L18.5 15 L15 18.5" fill="none" stroke="url(#navShieldGrad)" stroke-width="1.5"
-                stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="14" cy="14" r="7.5" fill="none" stroke="#f59e0b" stroke-opacity="0.25" stroke-width="2"/>
+          <path d="M14 6.5 A7.5 7.5 0 1 1 6.5 14" fill="none" stroke="url(#navSelaGrad)" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="14" cy="14" r="1.8" fill="url(#navSelaGrad)"/>
         </svg>
-        <span class="nav-logo-text">Veil<span>Pay</span></span>
+        <span class="nav-logo-text">Se<span>la</span></span>
       </a>
       <div class="nav-actions">
         <a href="dashboard.html" class="btn btn-ghost btn-sm hide-mobile">Dashboard</a>
@@ -71,7 +69,7 @@
 
   <footer>
     <div class="container">
-      <span class="footer-text">Cognata by TJS Code. Powered by the Smart TX Stack</span>
+      <span class="footer-text">Sela by TJS Code. Powered by the Smart TX Stack</span>
       <div class="footer-links">
         <a href="privacy.html">Privacy</a>
         <span class="footer-dot">·</span>

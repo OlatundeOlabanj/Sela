@@ -3,22 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pay Invoice, Cognata</title>
-  <meta name="description" content="Pay a Cognata invoice in USDC on Solana. Submitted via the Smart TX Stack for a landing-rate guarantee, no wallet-to-wallet transfer gives you." />
+  <title>Pay Invoice, Sela</title>
+  <meta name="description" content="Pay a Sela invoice in USDC on Solana. Submitted via the Smart TX Stack for a landing-rate guarantee, no wallet-to-wallet transfer gives you." />
   <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
-  <link rel="canonical" href="https://veilpay.store/pay.html" />
+  <link rel="canonical" href="https://selaaa.netlify.app/pay.html" />
   <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="Cognata" />
-  <meta property="og:title" content="Pay Invoice, Cognata" />
-  <meta property="og:description" content="Pay a Cognata invoice in USDC on Solana. Submitted via the Smart TX Stack for a landing-rate guarantee, no wallet-to-wallet transfer gives you." />
-  <meta property="og:image" content="https://veilpay.store/assets/og-image.png" />
-  <meta property="og:url" content="https://veilpay.store/pay.html" />
+  <meta property="og:site_name" content="Sela" />
+  <meta property="og:title" content="Pay Invoice, Sela" />
+  <meta property="og:description" content="Pay a Sela invoice in USDC on Solana. Submitted via the Smart TX Stack for a landing-rate guarantee, no wallet-to-wallet transfer gives you." />
+  <meta property="og:image" content="https://selaaa.netlify.app/assets/og-image.png" />
+  <meta property="og:url" content="https://selaaa.netlify.app/pay.html" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Pay Invoice, Cognata" />
-  <meta name="twitter:description" content="Pay a Cognata invoice in USDC on Solana. Submitted via the Smart TX Stack for a landing-rate guarantee." />
-  <meta name="twitter:image" content="https://veilpay.store/assets/og-image.png" />
+  <meta name="twitter:title" content="Pay Invoice, Sela" />
+  <meta name="twitter:description" content="Pay a Sela invoice in USDC on Solana. Submitted via the Smart TX Stack for a landing-rate guarantee." />
+  <meta name="twitter:image" content="https://selaaa.netlify.app/assets/og-image.png" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
   <style>
@@ -92,21 +92,19 @@
   <nav class="navbar">
     <div class="container">
       <a href="index.html" class="nav-logo">
-        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
           <defs>
-            <linearGradient id="navShieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <linearGradient id="navSelaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stop-color="#F4C752"/>
               <stop offset="100%" stop-color="#C68A15"/>
             </linearGradient>
           </defs>
           <rect width="28" height="28" rx="8" fill="#f59e0b" fill-opacity="0.15"/>
-          <path d="M14 6.5 L20 9 V14 C20 18.5 17.5 21.5 14 23 C10.5 21.5 8 18.5 8 14 V9 Z"
-                fill="none" stroke="url(#navShieldGrad)" stroke-width="1.5"/>
-          <path d="M10.5 15 H17.5" stroke="url(#navShieldGrad)" stroke-width="1.5" stroke-linecap="round"/>
-          <path d="M15 11.5 L18.5 15 L15 18.5" fill="none" stroke="url(#navShieldGrad)" stroke-width="1.5"
-                stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="14" cy="14" r="7.5" fill="none" stroke="#f59e0b" stroke-opacity="0.25" stroke-width="2"/>
+          <path d="M14 6.5 A7.5 7.5 0 1 1 6.5 14" fill="none" stroke="url(#navSelaGrad)" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="14" cy="14" r="1.8" fill="url(#navSelaGrad)"/>
         </svg>
-        <span class="nav-logo-text">Veil<span>Pay</span></span>
+        <span class="nav-logo-text">Se<span>la</span></span>
       </a>
       <div class="nav-actions">
         <span id="navWalletDisplay" class="wallet-address" style="display:none;"></span>
@@ -132,7 +130,7 @@
             </svg>
             <h3>Invoice Not Found</h3>
             <p>This invoice link is invalid, expired, or has already been paid. Please contact the sender for a new link.</p>
-            <a href="index.html" class="btn btn-ghost">Go to Cognata Home</a>
+            <a href="index.html" class="btn btn-ghost">Go to Sela Home</a>
           </div>
         </div>
       </div>
@@ -184,7 +182,7 @@
             <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
             </svg>
-            This payment goes wallet-to-wallet in USDC on Solana mainnet. Cognata's Smart TX Stack submits it as a Jito bundle with a live-market tip and an AI agent deciding on retries, so it lands reliably even under network congestion.
+            This payment goes wallet-to-wallet in USDC on Solana mainnet. Sela's Smart TX Stack submits it as a Jito bundle with a live-market tip and an AI agent deciding on retries, so it lands reliably even under network congestion.
           </div>
 
           <div id="stateConnect" class="pay-state active">
@@ -268,7 +266,7 @@
             <svg width="14" height="14" viewBox="0 0 101 88" fill="none">
               <path d="M100.48 69.32L83.84 85.96a1.87 1.87 0 0 1-1.32.54H1.88A1.87 1.87 0 0 1 .54 83.19l16.66-16.66a1.87 1.87 0 0 1 1.32-.54h80.64a1.87 1.87 0 0 1 1.32 3.33zM100.48 18.55L83.84 1.91A1.87 1.87 0 0 0 82.52 1.37H1.88A1.87 1.87 0 0 0 .54 4.7l16.66 16.66a1.87 1.87 0 0 0 1.32.54h80.64a1.87 1.87 0 0 0 1.32-3.35zM.54 52.44l16.64 16.64a1.87 1.87 0 0 0 1.32.54h80.64a1.87 1.87 0 0 0 1.32-3.33L83.82 49.65a1.87 1.87 0 0 0-1.32-.54H1.86A1.87 1.87 0 0 0 .54 52.44z" fill="#9945FF"/>
             </svg>
-            Powered by Cognata's Smart TX Stack
+            Powered by Sela's Smart TX Stack
           </div>
 
         </div>
@@ -466,7 +464,7 @@
         }, 500);
 
       } catch (err) {
-        console.error('[Cognata] Payment error:', err);
+        console.error('[Sela] Payment error:', err);
         document.getElementById('errorMessage').textContent = err.message || 'Transaction failed. Please try again.';
         showState('stateError');
         Cognata.showToast('Payment failed: ' + (err.message || 'Unknown error'), 'red');
