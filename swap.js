@@ -21,11 +21,14 @@ const SWAP_TOKENS = {
 };
 
 const SWAP_QUOTE_API = 'https://lite-api.jup.ag/swap/v1/quote';
-// Routed through a Netlify Function so the real Helius API key never
-// ships in client-side JS. See netlify/functions/rpc-proxy.js
+// Routed through a Netlify Function so the real RPC provider's key
+// never ships in client-side JS. See netlify/functions/rpc-proxy.js
 const SWAP_RPC = '/api/rpc';
 const SWAP_SLIPPAGE_BPS = 50;
 const SWAP_FEE_BPS = 100; // 1.00%
+// No fee wallet constant: the fee destination is derived at call-time
+// from window.PaymentTransfer.getTreasuryPda() (the program's
+// treasury PDA), not hardcoded here. See sendFeeTransfer below.
 const SWAP_EXECUTION_ENABLED = true; // re-enabled: MagicBlock removal left no dependency behind, verify with a small real swap before trusting it broadly
 
 const VeilSwapModule = (() => {

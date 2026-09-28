@@ -42,6 +42,20 @@
   to = "/.netlify/functions/bitnob-webhook"
   status = 200
 
+[[redirects]]
+  from = "/api/run-allowances"
+  to = "/.netlify/functions/run-allowances"
+  status = 200
+
+# Runs every hour and executes any due recurring-contribution
+# delegate (allowance) it finds. Netlify's own cron support requires
+# Functions v2 scheduled functions; if that's not enabled on this
+# site's plan, hit the /api/run-allowances redirect above from an
+# external cron (e.g. GitHub Actions, cron-job.org) at the same
+# cadence instead, either path calls the same handler.
+[functions."run-allowances"]
+  schedule = "@hourly"
+
 # Netlify auto-serves a root-level 404.html for unmatched paths since
 # publish = ".", this rule is an explicit backup for that behavior.
 [[redirects]]
