@@ -24,9 +24,8 @@
  */
 
 const CognataProgram = (() => {
-  // TODO: keep in sync with declare_id! in programs/cognata/src/lib.rs
-  // and Anchor.toml. Still a placeholder, see ACCOUNTS.md.
-  const PROGRAM_ID = '6apQZUxBwpBbFNiBpYzGeMBQJ8328xrrsQ3aRcQhM2Av';
+  // Comes from sela-config.js so the ID lives in one place.
+  const PROGRAM_ID = (window.SELA_CONFIG || {}).PROGRAM_ID;
 
   const TOKEN_PROGRAM_ID = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
   const SYSVAR_INSTRUCTIONS_PUBKEY = 'Sysvar1nstructions1111111111111111111111111';

@@ -3,45 +3,38 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cognata. Invoicing on Solana, Built to Land</title>
-  <meta name="description" content="Invoice on Solana with a landing-rate guarantee no wallet-to-wallet transfer gives you. Cognata's Smart TX Stack submits every payment as a Jito bundle with a live tip and an AI retry agent." />
+  <title>Sela. Shared savings goals on Solana</title>
+  <meta name="description" content="Sela is a shared savings goals app on Solana. Fund a goal together in USDC, set recurring allowances, and approve withdrawals with a passkey. Payments are submitted through the Smart TX Stack: Jito bundles, dynamic tips and an AI retry agent." />
   <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
-  <link rel="canonical" href="https://veilpay.store/" />
+  <link rel="canonical" href="https://selaaa.netlify.app/" />
 
   <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="Cognata" />
-  <meta property="og:title" content="Cognata, Invoicing on Solana, Built to Land" />
-  <meta property="og:description" content="Invoice on Solana with a landing-rate guarantee no wallet-to-wallet transfer gives you. Cognata's Smart TX Stack submits every payment as a Jito bundle with a live tip and an AI retry agent." />
-  <meta property="og:image" content="https://veilpay.store/assets/og-image.png" />
-  <meta property="og:url" content="https://veilpay.store/" />
+  <meta property="og:site_name" content="Sela" />
+  <meta property="og:title" content="Sela. Shared savings goals on Solana" />
+  <meta property="og:description" content="Shared savings goals for families and groups, funded in USDC on Solana." />
+  <meta property="og:image" content="https://selaaa.netlify.app/assets/og-image.png" />
+  <meta property="og:url" content="https://selaaa.netlify.app/" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Cognata, Invoicing on Solana, Built to Land" />
-  <meta name="twitter:description" content="Invoice on Solana with a landing-rate guarantee no wallet-to-wallet transfer gives you." />
-  <meta name="twitter:image" content="https://veilpay.store/assets/og-image.png" />
+  <meta name="twitter:title" content="Sela. Shared savings goals on Solana" />
+  <meta name="twitter:description" content="Shared savings goals for families and groups, funded in USDC on Solana." />
+  <meta name="twitter:image" content="https://selaaa.netlify.app/assets/og-image.png" />
 
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": "Cognata",
+    "name": "Sela",
     "applicationCategory": "FinanceApplication",
     "operatingSystem": "Web",
-    "url": "https://veilpay.store/",
-    "description": "Invoicing and payments on Solana. Cognata's Smart TX Stack submits every payment as a Jito bundle with a live-market tip and an AI retry agent so USDC payments land reliably, even under network congestion.",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "USD"
-    },
-    "creator": {
-      "@type": "Organization",
-      "name": "TJS Code"
-    }
+    "url": "https://selaaa.netlify.app/",
+    "description": "Shared savings goals for families and groups, funded in USDC on Solana. Payments are submitted through the Smart TX Stack, Jito bundles with a live tip and an AI retry agent.",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "TJS Code" }
   }
   </script>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
   <style>
     .hero-bg { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
@@ -96,6 +89,20 @@
     .cta-bottom h2 { margin-bottom: 0.75rem; }
     .cta-bottom p { margin-bottom: 2rem; }
     .cta-bottom .btn-primary { font-size: 1.05rem; padding: 0.9rem 2.25rem; }
+  
+    .pill { display: inline-flex; align-items: center; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 100px; font-family: var(--font-mono); }
+    .pill-live { background: var(--success-dim); color: var(--success); border: 1px solid rgba(16,185,129,0.25); }
+    .pill-build { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(245,158,11,0.25); }
+    .status-list { display: flex; flex-direction: column; gap: 0.6rem; }
+    .status-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.55rem 0.7rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.82rem; color: var(--text); }
+    .hero-status { font-size: 0.9rem !important; color: var(--text-muted) !important; max-width: 580px; margin-bottom: 2.25rem !important; }
+    .engine-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; align-items: center; }
+    @media (min-width: 900px) { .engine-grid { grid-template-columns: 1.1fr 0.9fr; } }
+    .engine-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .engine-item { display: flex; gap: 0.75rem; align-items: flex-start; font-size: 0.92rem; color: var(--text-muted); line-height: 1.65; }
+    .engine-item svg { flex-shrink: 0; margin-top: 4px; }
+    .grid-4 { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
+    .feature-card .pill { margin-bottom: 0.9rem; }
   </style>
 </head>
 <body>
@@ -103,24 +110,22 @@
   <nav class="navbar">
     <div class="container">
       <a href="index.html" class="nav-logo">
-        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
           <defs>
-            <linearGradient id="navShieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <linearGradient id="navSelaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stop-color="#F4C752"/>
               <stop offset="100%" stop-color="#C68A15"/>
             </linearGradient>
           </defs>
           <rect width="28" height="28" rx="8" fill="#f59e0b" fill-opacity="0.15"/>
-          <path d="M14 6.5 L20 9 V14 C20 18.5 17.5 21.5 14 23 C10.5 21.5 8 18.5 8 14 V9 Z"
-                fill="none" stroke="url(#navShieldGrad)" stroke-width="1.5"/>
-          <path d="M10.5 15 H17.5" stroke="url(#navShieldGrad)" stroke-width="1.5" stroke-linecap="round"/>
-          <path d="M15 11.5 L18.5 15 L15 18.5" fill="none" stroke="url(#navShieldGrad)" stroke-width="1.5"
-                stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="14" cy="14" r="7.5" fill="none" stroke="#f59e0b" stroke-opacity="0.25" stroke-width="2"/>
+          <path d="M14 6.5 A7.5 7.5 0 1 1 6.5 14" fill="none" stroke="url(#navSelaGrad)" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="14" cy="14" r="1.8" fill="url(#navSelaGrad)"/>
         </svg>
-        <span class="nav-logo-text">Veil<span>Pay</span></span>
+        <span class="nav-logo-text">Se<span>la</span></span>
       </a>
       <div class="nav-actions">
-        <a href="dashboard.html" class="btn btn-ghost btn-sm hide-mobile">Dashboard</a>
+        <a href="#status" class="btn btn-ghost btn-sm hide-mobile">What is live</a>
         <a href="dashboard.html" class="btn btn-primary btn-sm">Open App</a>
       </div>
     </div>
@@ -131,41 +136,32 @@
     <div class="container" style="position:relative;z-index:1;">
       <div class="hero-content">
         <div class="hero-eyebrow">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-          </svg>
-          Powered by the Smart TX Stack. Jito bundles, dynamic tips, AI retry
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/></svg>
+          Shared savings goals on Solana
         </div>
-        <h1>Invoice on Solana.<br>Built to actually <span>land.</span></h1>
-        <p class="hero-explain">Cognata is a free invoicing tool for freelancers who get paid in USDC. Create an invoice, send the link, and your client's payment lands straight in your Solana wallet, no bank, no PayPal, no processor taking a cut of your time.</p>
-        <p>Cognata submits every payment through the Smart TX Stack, a live-market Jito tip and an AI agent deciding on retries, so your invoice gets paid even when the network is congested.</p>
+        <h1>Save together.<br>Fund it in <span>USDC.</span></h1>
+        <p class="hero-explain">Sela lets a family or a group of friends fund one shared goal, set up recurring allowances, and approve withdrawals with a passkey instead of a seed phrase. The balance sits on Solana, so everyone can check it themselves.</p>
+        <p class="hero-status">Status: shared goals, allowances and passkey approvals are in active build, starting on devnet. Invoicing and token swaps are live on mainnet today, on the same payment engine.</p>
         <div class="hero-cta">
           <a href="dashboard.html" class="btn btn-primary btn-lg">
-            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <line x1="12" y1="18" x2="12" y2="12"/>
-              <line x1="9" y1="15" x2="15" y2="15"/>
-            </svg>
-            Create Invoice
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            Open Sela
           </a>
-          <a href="#features" class="btn btn-ghost btn-lg">
-            Learn More
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9"/>
-            </svg>
+          <a href="#how" class="btn btn-ghost btn-lg">
+            How it works
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
           </a>
         </div>
 
         <div class="hero-stats">
           <div>
-            <div class="hero-stat-value">Smart TX</div>
-            <div class="hero-stat-label">Jito bundle + AI retry</div>
+            <div class="hero-stat-value">USDC</div>
+            <div class="hero-stat-label">Goal currency</div>
           </div>
           <div class="hero-stat-divider"></div>
           <div>
-            <div class="hero-stat-value">Solana</div>
-            <div class="hero-stat-label">Mainnet settlement</div>
+            <div class="hero-stat-value">Jito + RPC</div>
+            <div class="hero-stat-label">Dual-send landing</div>
           </div>
           <div class="hero-stat-divider"></div>
           <div>
@@ -175,29 +171,17 @@
         </div>
       </div>
 
-      <div class="floating-badge">
+      <div class="floating-badge" id="status">
         <div class="fb-header">
-          <span class="fb-label">Invoice #0042</span>
-          <span class="fb-status">
-            <span class="fb-dot"></span>
-            In Progress
-          </span>
+          <span class="fb-label">Build status</span>
         </div>
-        <div class="fb-amount">150.00 USDC</div>
-        <div class="fb-desc">Brand identity design, Phase 1</div>
-        <div class="fb-steps">
-          <div class="fb-step done">
-            <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-            Submitted via Smart TX Stack
-          </div>
-          <div class="fb-step done">
-            <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-            Landed on Solana mainnet
-          </div>
-          <div class="fb-step">
-            <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
-            In your wallet
-          </div>
+        <div class="status-list">
+          <div class="status-row">Invoicing <span class="pill pill-live">Live</span></div>
+          <div class="status-row">Token swap <span class="pill pill-live">Live</span></div>
+          <div class="status-row">Shared goals <span class="pill pill-build">In build</span></div>
+          <div class="status-row">Allowances <span class="pill pill-build">In build</span></div>
+          <div class="status-row">Passkey approvals <span class="pill pill-build">In build</span></div>
+          <div class="status-row">Goal token <span class="pill pill-build">Coming soon</span></div>
         </div>
       </div>
     </div>
@@ -206,82 +190,108 @@
   <section class="section" id="features">
     <div class="container">
       <div class="text-center">
-        <div class="section-eyebrow">Why Cognata</div>
-        <h2 class="section-heading">Get paid reliably.<br>Stay in control.</h2>
-        <p class="section-sub">Built on real infrastructure, not marketing copy. Dynamic Jito tips and an AI retry agent replace the guesswork of a plain wallet transfer.</p>
+        <div class="section-eyebrow">What Sela does</div>
+        <h2 class="section-heading">One goal. Everyone can see it.<br>Nobody holds the keys alone.</h2>
+        <p class="section-sub">Sela keeps a shared goal in a Solana program, not in a spreadsheet or one person's wallet. These are the three pieces, and where each one stands.</p>
       </div>
 
       <div class="grid-3">
         <div class="feature-card">
           <div class="feature-icon">
-            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#f59e0b" stroke-width="2">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            </svg>
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#f59e0b" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>
           </div>
-          <h3>Built to Land</h3>
-          <p>Every payment is submitted as a Jito bundle with a live-market tip. Under congestion, that's the difference between a payment that lands and one that stalls.</p>
+          <span class="pill pill-build">In build</span>
+          <h3>Shared savings goals</h3>
+          <p>Create a goal with a target, then let each member contribute USDC. The balance is read from the chain, so it is the same number for everyone.</p>
         </div>
 
         <div class="feature-card">
           <div class="feature-icon">
-            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#f59e0b" stroke-width="2">
-              <path d="M7 16V4m0 0L3 8m4-4l4 4"/><path d="M17 8v12m0 0l4-4m-4 4l-4-4"/>
-            </svg>
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#f59e0b" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg>
           </div>
-          <h3>AI-Assisted Retries</h3>
-          <p>If a transaction stalls, a Groq AI agent, not a hardcoded if/else, decides whether to retry and at what tip, based on live network conditions.</p>
+          <span class="pill pill-build">In build</span>
+          <h3>Recurring allowances</h3>
+          <p>Authorize a weekly or monthly amount once. A keeper triggers each payment when it is due, and the on-chain rules cap it at the amount you approved.</p>
         </div>
 
         <div class="feature-card">
           <div class="feature-icon">
-            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#f59e0b" stroke-width="2">
-              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-            </svg>
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#f59e0b" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
           </div>
-          <h3>Shareable Invoice Links</h3>
-          <p>Generate a payment link for any client. They connect, pay, and USDC lands directly in your wallet. No separate claim step.</p>
+          <span class="pill pill-build">In build</span>
+          <h3>Passkey approvals</h3>
+          <p>Contributions and withdrawals are approved with a device passkey. There is no seed phrase to hand to a family member, and each device is registered to the goal.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="how-section" id="how">
+  <section class="how-section" id="engine">
+    <div class="container" style="padding:4rem 1.5rem;">
+      <div class="engine-grid">
+        <div>
+          <div class="section-eyebrow">The payment engine</div>
+          <h2 class="section-heading">Built on a stack that already moves real USDC.</h2>
+          <p style="color:var(--text-muted);font-size:1rem;line-height:1.75;max-width:520px;">Every Sela payment goes through the Smart TX Stack, first built for invoicing and running on mainnet today. Goals and allowances reuse it instead of a plain wallet transfer.</p>
+        </div>
+        <div class="engine-list">
+          <div class="engine-item"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#f59e0b" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>Submitted as a Jito bundle with a live-market tip, and sent to a standard RPC at the same time.</span></div>
+          <div class="engine-item"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#f59e0b" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>An AI agent decides whether a stalled transaction should be retried, and at what tip.</span></div>
+          <div class="engine-item"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#f59e0b" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>Retries wait for the old blockhash to expire first, so a slow payment cannot be charged twice.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="how" style="padding-bottom:0;">
     <div class="container">
-      <div class="text-center" style="padding:3.5rem 0 2.5rem;">
-        <div class="section-eyebrow">How It Works</div>
-        <h2 class="section-heading">Three steps to a landed payment.</h2>
+      <div class="text-center" style="padding:1rem 0 2.5rem;">
+        <div class="section-eyebrow">How it works</div>
+        <h2 class="section-heading">From an empty goal to a full one.</h2>
       </div>
       <div class="steps-grid">
         <div class="step">
           <div class="step-number">01</div>
-          <h4>Client Pays</h4>
-          <p>Your client approves one signature in their wallet. That's the whole payment flow on their end.</p>
+          <h4>Create a goal</h4>
+          <p>Name it, set a USDC target, and register the devices of the people who can approve.</p>
         </div>
         <div class="step">
           <div class="step-number">02</div>
-          <h4>Smart Submission</h4>
-          <p>Cognata's Smart TX Stack submits it as a Jito bundle with a live-market tip, with a Groq AI agent deciding on retries if the network's congested.</p>
+          <h4>Contribute</h4>
+          <p>Add USDC whenever you like. Each contribution is approved with your passkey.</p>
         </div>
         <div class="step">
           <div class="step-number">03</div>
-          <h4>Landed On-Chain</h4>
-          <p>USDC settles on Solana mainnet directly into your wallet, 98% to you, 2% platform fee. No separate claim step.</p>
+          <h4>Set an allowance</h4>
+          <p>Approve a recurring amount once. It runs on schedule without another prompt.</p>
         </div>
+        <div class="step">
+          <div class="step-number">04</div>
+          <h4>Watch it fill</h4>
+          <p>The goal balance comes from the chain, and the goal completes when it reaches the target.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="invoicing">
+    <div class="container">
+      <div class="text-center">
+        <div class="section-eyebrow">Also live: invoicing</div>
+        <h2 class="section-heading">The payment engine's first use.</h2>
+        <p class="section-sub" style="margin-bottom:2rem;">Freelancers and small teams can already create an invoice, share the link, and get paid in USDC straight to their wallet on Solana mainnet. A 2% platform fee applies, and there is no account or KYC.</p>
+        <a href="dashboard.html" class="btn btn-ghost btn-lg">Create an invoice</a>
       </div>
     </div>
   </section>
 
   <section class="cta-bottom" id="cta">
     <div class="container">
-      <div class="section-eyebrow" style="margin-bottom:0.75rem;">Ready to start?</div>
-      <h2>Your clients pay. It actually lands.</h2>
-      <p style="max-width:460px;margin:0.75rem auto 2rem;font-size:1rem;">Create your first invoice in under a minute. No account. No KYC. Just connect and invoice.</p>
+      <div class="section-eyebrow" style="margin-bottom:0.75rem;">Ready to try it?</div>
+      <h2>Connect a wallet and look around.</h2>
+      <p style="max-width:460px;margin:0.75rem auto 2rem;font-size:1rem;">Invoicing and swaps work today. Goals and allowances are labelled in the app while they are being finished.</p>
       <a href="dashboard.html" class="btn btn-primary btn-lg">
-        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-          <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
-        </svg>
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
         Open Dashboard
       </a>
     </div>
@@ -289,10 +299,10 @@
 
   <footer>
     <div class="container">
-      <span class="footer-text">Cognata by TJS Code. Powered by the Smart TX Stack</span>
+      <span class="footer-text">Sela by TJS Code. Powered by the Smart TX Stack</span>
       <div class="footer-links">
         <a href="privacy.html">Privacy</a>
-        <span class="footer-dot">·</span>
+        <span class="footer-dot">&middot;</span>
         <a href="tos.html">Terms</a>
       </div>
       <span class="footer-brand">Made by TJS Code</span>
@@ -300,6 +310,7 @@
   </footer>
 
   <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+  <script src="sela-config.js"></script>
   <script src="payment-transfer.js"></script>
   <script src="smart-tx.js"></script>
   <script src="veil-engine.js"></script>

@@ -1,19 +1,15 @@
-<svg width="240" height="80" viewBox="0 0 240 80" xmlns="http://www.w3.org/2000/svg">
+<svg width="200" height="64" viewBox="0 0 200 64" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="selaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#F4C752"/>
       <stop offset="100%" stop-color="#C68A15"/>
     </linearGradient>
   </defs>
-
-  
-  <g transform="translate(10, 10)">
-    <path d="M27 0 L52 9 V26 C52 42 41 52 27 58 C13 52 2 42 2 26 V9 Z"
-          fill="none" stroke="url(#shieldGrad)" stroke-width="3.5"/>
-    <path d="M12 29 H42" stroke="url(#shieldGrad)" stroke-width="3.5" stroke-linecap="round"/>
-    <path d="M33 20 L44 29 L33 38" fill="none" stroke="url(#shieldGrad)" stroke-width="3.5"
-          stroke-linecap="round" stroke-linejoin="round"/>
+  <g transform="translate(6, 8)">
+    <rect width="48" height="48" rx="14" fill="#f59e0b" fill-opacity="0.15"/>
+    <circle cx="24" cy="24" r="12.8" fill="none" stroke="#f59e0b" stroke-opacity="0.25" stroke-width="3.4"/>
+    <path d="M24 11.2 A12.8 12.8 0 1 1 11.2 24" fill="none" stroke="url(#selaGrad)" stroke-width="3.4" stroke-linecap="round"/>
+    <circle cx="24" cy="24" r="3.1" fill="url(#selaGrad)"/>
   </g>
-
-  <text x="72" y="46" font-family="'Space Grotesk', sans-serif" font-size="28" font-weight="700" fill="#F0F0F0">Veil<tspan fill="#E0A020">Pay</tspan></text>
+  <text x="68" y="42" font-family="'Space Grotesk', sans-serif" font-size="30" font-weight="700" fill="#F0F0F0">Se<tspan fill="#E0A020">la</tspan></text>
 </svg>
