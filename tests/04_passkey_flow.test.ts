@@ -45,7 +45,7 @@ describe("family-wallet: passkey-authorized flow (contribute, withdraw, recurrin
   const [delegatePda] = deriveDelegatePda(goalPda);
 
   // Treasury's fee-collection ATA is deterministic (owner = treasuryPda,
-  // mint = DEVNET_USDC_MINT) — no per-test wallet needed anymore, since
+  // mint = DEVNET_USDC_MINT), no per-test wallet needed anymore, since
   // every vault now sweeps to this one program-owned destination.
   let feeDestinationUsdcAta: PublicKey;
   let goalUsdcAta: PublicKey;
@@ -58,7 +58,7 @@ describe("family-wallet: passkey-authorized flow (contribute, withdraw, recurrin
         .accounts({ payer: mainWallet.publicKey, treasury: treasuryPda, systemProgram: SystemProgram.programId })
         .rpc();
     }
-    // treasuryPda has no keypair — it never signs, only owns the ATA —
+    // treasuryPda has no keypair, it never signs, only owns the ATA ,
     // so this just needs SOMEONE to pay the ATA's rent, not the PDA
     // "as a wallet". mainWallet pays; owner is the PDA.
     feeDestinationUsdcAta = await ensureAta(connection, mainWallet, DEVNET_USDC_MINT, treasuryPda);

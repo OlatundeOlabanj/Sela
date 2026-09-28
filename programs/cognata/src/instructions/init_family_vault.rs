@@ -6,7 +6,7 @@ use crate::state::{FamilyVault, FeeTier};
 #[instruction(vault_seed: Pubkey)]
 pub struct InitFamilyVault<'info> {
     /// Backend service authority. Pays rent and signs vault creation.
-    /// This is NOT a passkey check — vault creation happens once
+    /// This is NOT a passkey check, vault creation happens once
     /// during onboarding, before any device is registered, so there's
     /// nothing to verify a signature against yet.
     #[account(mut)]

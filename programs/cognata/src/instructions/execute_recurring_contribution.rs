@@ -10,7 +10,7 @@ use crate::state::{
 use crate::token_transfer::transfer_checked_cpi_signed;
 
 /// Called by the Celery scheduler (any keeper, no special signer
-/// privilege needed for the CALLER — the fund-movement authority comes
+/// privilege needed for the CALLER, the fund-movement authority comes
 /// entirely from the on-chain delegate PDA + its seeds, not from
 /// whoever submits this transaction). This is deliberate: a
 /// compromised backend key that can only CALL this instruction still
@@ -20,7 +20,7 @@ use crate::token_transfer::transfer_checked_cpi_signed;
 /// below, not by caller identity.
 #[derive(Accounts)]
 pub struct ExecuteRecurringContribution<'info> {
-    /// Anyone may call this — see doc comment above. Pays the tx fee.
+    /// Anyone may call this, see doc comment above. Pays the tx fee.
     #[account(mut)]
     pub keeper: Signer<'info>,
 
@@ -61,7 +61,7 @@ pub struct ExecuteRecurringContribution<'info> {
     pub fee_destination: Box<Account<'info, TokenAccount>>,
 
     /// The recurring schedule's registered source, enforced on-chain
-    /// against delegate.source_token_account — the backend cannot
+    /// against delegate.source_token_account, the backend cannot
     /// redirect this to a different account, even one that's also
     /// SPL-approved for this delegate PDA.
     #[account(mut, address = delegate.source_token_account)]

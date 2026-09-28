@@ -1,6 +1,6 @@
 // Passkey (secp256r1) authorization verification.
 //
-// This is the highest-risk file in the program — it's the actual
+// This is the highest-risk file in the program, it's the actual
 // on-chain check that a WebAuthn passkey really authorized this
 // specific transaction. Two things in here are my best understanding
 // from Solana's spec/docs, NOT yet confirmed against a real compiler
@@ -10,7 +10,7 @@
 //   2. Whether u16::MAX is really the "this same instruction" sentinel
 //      for the offsets' instruction-index fields (modeled on the
 //      well-documented Ed25519 precompile's convention, which
-//      secp256r1 was designed to mirror — but not independently
+//      secp256r1 was designed to mirror, but not independently
 //      verified here).
 // Everything else (offsets struct layout, WebAuthn message format) is
 // confirmed against Solana's SIMD-0075 spec.
@@ -18,14 +18,14 @@
 // CORRECTED after an earlier design flaw: the challenge commitment
 // cannot include the precompile instruction (not determined until
 // after signing) or the proof fields on our own instruction
-// (authenticator_data, client_data_json — also downstream of the
+// (authenticator_data, client_data_json, also downstream of the
 // commitment itself). Doing so is circular: you can't sign a
 // commitment to your own signature. The fix: hash every OTHER
 // instruction in full (this is what still closes the "compromised
 // backend bundles an extra instruction" attack class), skip the
 // precompile instruction entirely, and for our own instruction only
 // hash the fixed-size "business argument" prefix (device_role,
-// amount, etc. — whatever comes before the variable-length proof
+// amount, etc., whatever comes before the variable-length proof
 // fields in the instruction's declared argument order).
 
 use anchor_lang::prelude::*;
@@ -34,12 +34,17 @@ use solana_sha256_hasher::hashv;
 
 use crate::errors::FamilyWalletError;
 
-// UNCONFIRMED IMPORT — best guess based on the analogous, confirmed-
+// UNCONFIRMED IMPORT, best guess based on the analogous, confirmed-
 // working `solana_sdk_ids::secp256k1_program` pattern for the OTHER
 // precompile. If this doesn't resolve, the fallback is comparing
 // `ix.program_id.to_string()` against the literal base58 string
 // "Secp256r1SigVerify1111111111111111111111111" instead.
 use solana_sdk_ids::secp256r1_program;
+
+/// The exact origin WebAuthn must report in clientDataJSON. Must match
+/// the URL the app is served from. Changing the domain means changing
+/// this and upgrading the program.
+pub const EXPECTED_ORIGIN: &[u8] = b"https://selaaa.netlify.app";
 
 const SIGNATURE_LEN: usize = 64;
 const COMPRESSED_PUBKEY_LEN: usize = 33;
@@ -87,7 +92,7 @@ fn parse_offsets(data: &[u8]) -> Result<Secp256r1SignatureOffsets> {
 }
 
 /// Resolves an offsets field's (instruction_index, data) into the
-/// actual byte slice it refers to — which may be the same instruction
+/// actual byte slice it refers to, which may be the same instruction
 /// the offsets live in, or a different one in the same transaction.
 fn resolve_bytes<'a>(
     instructions_sysvar: &AccountInfo,
@@ -113,7 +118,7 @@ fn resolve_bytes<'a>(
 
 /// Finds the secp256r1 precompile instruction anywhere in this
 /// transaction and returns (verified_pubkey, verified_message).
-/// Does NOT re-verify the signature math — the Solana runtime already
+/// Does NOT re-verify the signature math, the Solana runtime already
 /// guarantees that before our program executes at all (an invalid
 /// precompile signature drops the whole transaction, never reaching
 /// us). Our job is confirming it verified the RIGHT pubkey and
@@ -157,18 +162,18 @@ fn find_verified_secp256r1_signature(
     Err(error!(FamilyWalletError::InvalidPasskeyProof))
 }
 
-/// Hashes the "authorized action" this transaction represents — every
+/// Hashes the "authorized action" this transaction represents, every
 /// OTHER instruction in full, PLUS only the fixed-size business-
 /// argument prefix of our own instruction (after the 8-byte Anchor
 /// discriminator). The secp256r1 precompile instruction is skipped
 /// entirely. Both exclusions exist because those bytes are downstream
-/// of this very commitment (see module doc comment) — including them
+/// of this very commitment (see module doc comment), including them
 /// would make the challenge circular and unsatisfiable.
 ///
 /// `business_data_len` is the number of bytes (after the discriminator)
 /// that make up the fixed-size arguments declared BEFORE
 /// authenticator_data/client_data_json in the calling instruction's
-/// signature — e.g. for `contribute(device_role: u8, amount: u64,
+/// signature, e.g. for `contribute(device_role: u8, amount: u64,
 /// decimals: u8, ...)` that's 1 + 8 + 1 = 10.
 fn hash_authorized_action(
     instructions_sysvar: &AccountInfo,
@@ -213,7 +218,7 @@ fn hash_authorized_action(
 }
 
 /// Finds `"key":"value"` in a clientDataJSON byte string and returns
-/// `value`'s bytes. Deliberately NOT a general JSON parser — browsers
+/// `value`'s bytes. Deliberately NOT a general JSON parser, browsers
 /// produce clientDataJSON deterministically, and the three fields we
 /// read (type, origin, challenge) are all values that cannot contain
 /// literal `"` or `\` characters (a fixed enum string, a URL, and
@@ -236,7 +241,7 @@ fn extract_json_string_field<'a>(json: &'a [u8], key: &str) -> Result<&'a [u8]> 
 }
 
 /// The main entry point every passkey-gated instruction calls.
-/// `business_data_len` — see hash_authorized_action's doc comment.
+/// `business_data_len`, see hash_authorized_action's doc comment.
 pub fn verify_passkey_authorization(
     instructions_sysvar: &AccountInfo,
     expected_device_pubkey: &[u8; 33],
@@ -285,7 +290,7 @@ pub fn verify_passkey_authorization(
     Ok(())
 }
 
-/// Minimal base64url (no padding) encoder — WebAuthn's `challenge`
+/// Minimal base64url (no padding) encoder, WebAuthn's `challenge`
 /// field uses this encoding. Written by hand rather than pulling in a
 /// base64 crate for one function; not performance-sensitive.
 fn base64_url_encode(input: &[u8]) -> String {

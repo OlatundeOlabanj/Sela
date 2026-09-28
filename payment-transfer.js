@@ -83,7 +83,7 @@ const PaymentTransfer = (() => {
   // The program treasury PDA. The fee destination is the
   // Cognata program's own [b"treasury"] PDA (see
   // programs/cognata/src/state.rs Treasury /
-  // instructions/claim_fees.rs) — a program-owned address with no
+  // instructions/claim_fees.rs), a program-owned address with no
   // private key, derived deterministically here from the program ID,
   // not a pubkey that lives as a string anyone could swap out.
   function getTreasuryPda() {

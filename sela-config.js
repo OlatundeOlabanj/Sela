@@ -20,9 +20,13 @@
  *
  * Made by TJS Code
  */
-window.SELA_CONFIG = {
+const SELA_CONFIG = {
   PROGRAM_CLUSTER: 'devnet',
   PROGRAM_ID: '6apQZUxBwpBbFNiBpYzGeMBQJ8328xrrsQ3aRcQhM2Av',
   FEE_MODE: 'wallet',
   FEE_WALLET: 'CjFuX951H7xEoLD3Gzbht5pqK7baoGZ6q32SfUQxNdWS',
 };
+
+// Browser: window.SELA_CONFIG. Netlify Functions (Node): require('../../sela-config.js').
+if (typeof window !== 'undefined') window.SELA_CONFIG = SELA_CONFIG;
+if (typeof module !== 'undefined' && module.exports) module.exports = SELA_CONFIG;

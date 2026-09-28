@@ -26,10 +26,15 @@
 
 const { Connection, PublicKey, Keypair, Transaction, TransactionInstruction } = require('@solana/web3.js');
 const { getRpcUrl } = require('../../lib/rpcClient');
+const SELA_CONFIG = require('../../sela-config.js');
 
-// TODO: keep in sync with declare_id! in programs/cognata/src/lib.rs
-// and Anchor.toml. Still a placeholder, see ACCOUNTS.md.
-const PROGRAM_ID = new PublicKey('6apQZUxBwpBbFNiBpYzGeMBQJ8328xrrsQ3aRcQhM2Av');
+// Cluster and program ID come from sela-config.js, the same file the
+// browser reads. The program runs on PROGRAM_CLUSTER (devnet until it
+// is deployed to mainnet), so the keeper must talk to that cluster and
+// not to the mainnet RPC provider used for payments.
+const PROGRAM_CLUSTER = SELA_CONFIG.PROGRAM_CLUSTER;
+const IS_MAINNET = PROGRAM_CLUSTER === 'mainnet-beta';
+const PROGRAM_ID = new PublicKey(SELA_CONFIG.PROGRAM_ID);
 const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
 const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL');
 const JITO_BUNDLES_URL = 'https://mainnet.block-engine.jito.wtf/api/v1/bundles';
@@ -111,7 +116,8 @@ function buildExecuteInstruction({ keeper, vault, goal, delegate, goalTokenAccou
 async function submitDualSend(connection, signedTx) {
   const raw = signedTx.serialize();
   const base64 = raw.toString('base64');
-  const jito = fetch(JITO_BUNDLES_URL, {
+  // Jito only exists on mainnet, skip it on any other cluster.
+  const jito = !IS_MAINNET ? Promise.resolve({ error: { message: 'skipped, Jito is mainnet only' } }) : fetch(JITO_BUNDLES_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'sendBundle', params: [[base64], { encoding: 'base64' }] }),
@@ -142,7 +148,11 @@ exports.handler = async () => {
 
   let rpcUrl;
   try {
-    rpcUrl = getRpcUrl();
+    // PROGRAM_RPC_URL (optional env var) overrides. Otherwise mainnet
+    // uses the shared provider-agnostic RPC, anything else uses the
+    // public endpoint for that cluster.
+    rpcUrl = process.env.PROGRAM_RPC_URL
+      || (IS_MAINNET ? getRpcUrl() : 'https://api.' + PROGRAM_CLUSTER + '.solana.com');
   } catch (err) {
     return { statusCode: 500, headers, body: JSON.stringify({ error: 'RPC misconfigured: ' + err.message }) };
   }

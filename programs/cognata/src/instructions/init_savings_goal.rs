@@ -21,7 +21,7 @@ pub struct InitSavingsGoal<'info> {
     )]
     pub goal: Account<'info, SavingsGoal>,
 
-    /// Program-created via CPI to the Associated Token Program —
+    /// Program-created via CPI to the Associated Token Program ,
     /// CORRECTED from the earlier draft, which trusted the client to
     /// pre-create this and just hand over an address with no on-chain
     /// verification of who actually created it or what authority it

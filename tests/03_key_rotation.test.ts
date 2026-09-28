@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { SystemProgram } from "@solana/web3.js";
 import { getProgram, loadTestWallet, deriveVaultPda, deriveRotationPda } from "./helpers";
 
-describe("family-wallet: guardian-approved key rotation — second highest risk", () => {
+describe("family-wallet: guardian-approved key rotation, second highest risk", () => {
   const { program, provider } = getProgram();
   const connection = provider.connection;
 

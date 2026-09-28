@@ -3,7 +3,7 @@ use crate::errors::FamilyWalletError;
 use crate::state::{FamilyVault, KeyRotationRequest, RotationStatus};
 /// Guardian-alone approval, per locked v1 decision (no partner veto
 /// window). This single instruction both approves AND executes the
-/// rotation atomically — swapping the registered device pubkey for
+/// rotation atomically, swapping the registered device pubkey for
 /// the new one directly on FamilyVault. Splitting "approve" and
 /// "execute" into two separate txs would only add a race-condition
 /// window without adding real security, since the guardian signature

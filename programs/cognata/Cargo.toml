@@ -17,7 +17,7 @@ idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
 
 [dependencies]
 anchor-lang = "1.1.2"
-anchor-spl = { version = "1.1.2", default-features = false, features = ["token", "token_2022", "associated_token"] }
+anchor-spl = { version = "1.1.2", default-features = false, features = ["token", "associated_token"] }
 solana-instructions-sysvar = "3.0.1"
 solana-sha256-hasher = "3.1.0"
 solana-sdk-ids = "3.1.0"

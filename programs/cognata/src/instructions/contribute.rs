@@ -10,7 +10,7 @@ use crate::token_transfer::transfer_checked_cpi_signed;
 /// so manual contributions use one unified TransferChecked path.
 ///
 /// Authorization: NOT a Signer check. The contributor's funds live in
-/// a wallet_authority PDA (per device, no off-chain keypair — see the
+/// a wallet_authority PDA (per device, no off-chain keypair, see the
 /// smart-wallet design in passkey.rs), and this instruction moves
 /// funds out of it via invoke_signed ONLY after
 /// verify_passkey_authorization confirms a real secp256r1 signature
@@ -20,7 +20,7 @@ use crate::token_transfer::transfer_checked_cpi_signed;
 #[derive(Accounts)]
 #[instruction(device_role: u8)]
 pub struct Contribute<'info> {
-    /// Pays the transaction fee. No special privilege — passkey
+    /// Pays the transaction fee. No special privilege, passkey
     /// verification is what actually authorizes the fund movement.
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -45,7 +45,7 @@ pub struct Contribute<'info> {
     pub goal_token_account: Box<Account<'info, TokenAccount>>,
 
     /// Program-wide singleton treasury PDA. Not caller-supplied, not
-    /// stored per-vault — every vault sweeps fees to the same
+    /// stored per-vault, every vault sweeps fees to the same
     /// program-owned destination, so there's no field anywhere a
     /// caller could point at a personal wallet instead.
     #[account(seeds = [b"treasury"], bump = treasury.bump)]
@@ -58,7 +58,7 @@ pub struct Contribute<'info> {
     )]
     pub fee_destination: Box<Account<'info, TokenAccount>>,
 
-    /// The contributing device's personal holding account — owned by
+    /// The contributing device's personal holding account, owned by
     /// wallet_authority, not by any personal keypair.
     #[account(mut)]
     pub contributor_token_account: Box<Account<'info, TokenAccount>>,
@@ -98,14 +98,13 @@ pub fn handler(
         _ => return err!(FamilyWalletError::UnauthorizedContributor),
     };
 
-    // TODO(passkey): expected_origin should come from program-level
-    // config once the frontend domain is finalized — placeholder now.
+    // Origin is the compile-time constant passkey::EXPECTED_ORIGIN.
     verify_passkey_authorization(
         &ctx.accounts.instructions_sysvar.to_account_info(),
         &expected_device_pubkey,
         &authenticator_data,
         &client_data_json,
-        b"https://app.familywallet.example",
+        crate::passkey::EXPECTED_ORIGIN,
         10,
     )?;
 

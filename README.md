@@ -11,12 +11,12 @@ deadline October 12, 2026.
 
 Two codebases merged into one:
 
-- **Cognata** (was `family-wallet-phase1`) — the Rust/Anchor program.
+- **Cognata** (was `family-wallet-phase1`), the Rust/Anchor program.
   Family vaults, savings goals, passkey-gated device authorization,
   recurring contributions, guardian recovery. Kept as the product
   name and brand.
 - **VeilPay** (`github.com/OlatundeOlabanj/veilpay`, private,
-  production mainnet) — the payment engine underneath. Real USDC
+  production mainnet), the payment engine underneath. Real USDC
   transfers as Jito bundles, dynamic tips, a Groq AI retry agent,
   dual-send (Jito + Helius concurrently). This is what actually moves
   money; Cognata's on-chain program is what enforces who's allowed to
@@ -81,7 +81,7 @@ Fixed as follows:
 - **`instructions/claim_fees.rs`**: the *only* instruction that can
   move funds out of the treasury. Gated to `fee_config.admin` as
   signer. **`admin` needs to be set to a multisig (Squads or
-  similar) at deploy time, not a personal keypair** — the PDA fixes
+  similar) at deploy time, not a personal keypair**, the PDA fixes
   the receiving side, but claiming still needs a multisig on the
   spending side, or you've just moved the single-point-of-failure one
   step over instead of removing it.

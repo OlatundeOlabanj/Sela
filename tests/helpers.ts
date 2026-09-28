@@ -94,7 +94,7 @@ export async function ensureAta(
 
 // --- Passkey (secp256r1) test helpers ---
 // Real P-256 signing, WebAuthn-shaped message construction, and
-// secp256r1 precompile instruction building — proven against real
+// secp256r1 precompile instruction building, proven against real
 // devnet transactions (contribute, withdraw, authorize_recurring_
 // delegate, cancel_recurring_delegate all verified working with these
 // helpers before they were moved here from standalone scripts).
@@ -103,7 +103,7 @@ import * as crypto from "crypto";
 import { TransactionInstruction } from "@solana/web3.js";
 
 export const SECP256R1_PROGRAM_ID = new PublicKey("Secp256r1SigVerify1111111111111111111111111");
-export const PASSKEY_EXPECTED_ORIGIN = "https://app.familywallet.example";
+export const PASSKEY_EXPECTED_ORIGIN = "https://selaaa.netlify.app";
 
 const CURVE_ORDER = BigInt(
   "0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551"
@@ -191,7 +191,7 @@ export async function signForInstruction(
   const challengeHash = crypto.createHash("sha256").update(hashInput).digest();
   const challengeB64 = base64UrlEncode(challengeHash);
 
-  const rpIdHash = crypto.createHash("sha256").update("app.familywallet.example").digest();
+  const rpIdHash = crypto.createHash("sha256").update("selaaa.netlify.app").digest();
   const authenticatorData = Buffer.concat([rpIdHash, Buffer.from([0x01]), Buffer.from([0, 0, 0, 0])]);
   const clientDataJson = Buffer.from(
     JSON.stringify({ type: "webauthn.get", challenge: challengeB64, origin: PASSKEY_EXPECTED_ORIGIN })

@@ -6,7 +6,7 @@ use crate::state::{FeeConfig, Treasury};
 use crate::token_transfer::transfer_checked_cpi_signed;
 
 /// The only way funds ever leave the treasury PDA. Gated to
-/// `fee_config.admin` — in production this must be a multisig (e.g. a
+/// `fee_config.admin`, in production this must be a multisig (e.g. a
 /// Squads vault), not a personal keypair, or the PDA-owned-treasury
 /// protection on the receiving side is undone by a single-key
 /// authority on the spending side.
@@ -29,7 +29,7 @@ pub struct ClaimFees<'info> {
 
     /// Wherever the admin wants claimed fees sent. Deliberately NOT
     /// constrained to any particular address here, since this whole
-    /// instruction is already gated to the admin signer — the fixed-
+    /// instruction is already gated to the admin signer, the fixed-
     /// destination guarantee lives on the receiving side (contribute /
     /// execute_recurring_contribution), not here.
     #[account(mut)]

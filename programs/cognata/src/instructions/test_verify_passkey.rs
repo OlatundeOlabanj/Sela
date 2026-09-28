@@ -8,7 +8,7 @@ use crate::passkey::verify_passkey_authorization;
 /// unauthenticated oracle that verifies ANY caller-supplied secp256r1
 /// proof against ANY caller-supplied expected pubkey, with no vault/
 /// business context. Genuinely useful for confirming passkey.rs still
-/// works correctly after future changes — genuinely dangerous to leave
+/// works correctly after future changes, genuinely dangerous to leave
 /// reachable on a production deployment, since it has no access
 /// control of its own. Strip this file + its lib.rs/mod.rs wiring as
 /// part of pre-mainnet cleanup, verified by grep for
