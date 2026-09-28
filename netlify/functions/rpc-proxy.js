@@ -1,16 +1,21 @@
 // netlify/functions/rpc-proxy.js
 //
-// Server-side proxy for Solana RPC calls. The endpoint (and whatever
-// auth it needs) lives only here, as Netlify environment variables,
-// never shipped in client-side JS. See lib/rpcClient.js for how the
-// endpoint is resolved and how to point this at a different provider.
+// Server side proxy for Solana RPC calls. The endpoint and its key live
+// only in Netlify environment variables, never in browser code. See
+// lib/rpcClient.js for how each cluster's endpoint is resolved.
 //
-// Frontend calls: /.netlify/functions/rpc-proxy
-// instead of calling the provider's RPC URL directly.
+// Frontend calls /api/rpc (redirected here). Pick a cluster with a
+// query parameter:
+//   /api/rpc                     mainnet-beta, through RPC Fast
+//   /api/rpc?cluster=devnet      devnet, through DEVNET_RPC_URL or the
+//                                public devnet endpoint
+// The default stays mainnet-beta so existing callers are unchanged.
+// A caller can only name a cluster, never supply a URL.
 //
 // Made by TJS Code
 
-const { getRpcUrl } = require('../../lib/rpcClient');
+const { getRpcUrlForCluster, isValidCluster } = require('../../lib/rpcClient');
+const { isAllowedOrigin } = require('../../lib/originGuard');
 
 exports.handler = async (event) => {
   const headers = {
@@ -31,18 +36,22 @@ exports.handler = async (event) => {
     };
   }
 
-  // Lightweight abuse guard: only accept requests that look like they
-  // came from this site's own pages. Not bulletproof (headers can be
-  // spoofed outside a browser), but blocks casual scraping of the RPC
-  // key's quota. TODO: real rate limiting per IP if abuse shows up.
-  const origin = event.headers?.origin || event.headers?.referer || '';
-  if (origin && !origin.includes('veilpay.store') && !origin.includes('veilpay-tjscode.netlify.app') && !origin.includes('localhost')) {
+  if (!isAllowedOrigin(event.headers)) {
     return { statusCode: 403, headers, body: JSON.stringify({ error: 'Forbidden origin.' }) };
+  }
+
+  const cluster = (event.queryStringParameters && event.queryStringParameters.cluster) || 'mainnet-beta';
+  if (!isValidCluster(cluster)) {
+    return {
+      statusCode: 400,
+      headers,
+      body: JSON.stringify({ error: 'Unknown cluster. Use mainnet-beta or devnet.' }),
+    };
   }
 
   let rpcUrl;
   try {
-    rpcUrl = getRpcUrl();
+    rpcUrl = getRpcUrlForCluster(cluster);
   } catch (err) {
     return {
       statusCode: 500,
@@ -66,10 +75,13 @@ exports.handler = async (event) => {
       body: data,
     };
   } catch (err) {
+    // err.message can contain the request URL on some fetch failures,
+    // so it is not echoed back. Log server side only.
+    console.error('rpc-proxy upstream failure:', err && err.message);
     return {
       statusCode: 502,
       headers,
-      body: JSON.stringify({ error: 'RPC proxy request failed: ' + err.message }),
+      body: JSON.stringify({ error: 'RPC proxy request failed.' }),
     };
   }
 };
