@@ -111,6 +111,10 @@ pub struct FamilyVault {
     pub goal_seq: u32,
     pub bump: u8,
     pub created_at: i64,
+    /// The wallet that created this vault. Only this wallet may add
+    /// goals to it (init_savings_goal), otherwise anyone could add
+    /// goals to anyone's vault. Appended last so no earlier offset moves.
+    pub creator: Pubkey,
 }
 impl FamilyVault {
     pub const SPACE: usize =
@@ -123,7 +127,8 @@ impl FamilyVault {
         + 1  // fee_tier
         + 4  // goal_seq
         + 1  // bump
-        + 8; // created_at
+        + 8  // created_at
+        + 32; // creator
 }
 
 #[repr(u8)]

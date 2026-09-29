@@ -8,7 +8,7 @@ import { TEST_WALLETS_DIR } from "../scripts/constants";
 
 export const IDL = JSON.parse(
   fs.readFileSync(
-    path.join(__dirname, "..", "target", "idl", "family_wallet.json"),
+    path.join(__dirname, "..", "target", "idl", "cognata.json"),
     "utf-8"
   )
 );

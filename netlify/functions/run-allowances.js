@@ -81,17 +81,17 @@ function decodeDelegate(pubkey, data) {
 }
 
 /**
- * Decodes just enough of a SavingsGoal to get goal_token_account and
- * mint, needed to build the execute instruction. Layout (after the
- * 8-byte discriminator): vault(32) goal_seq(4) target_amount(8)
- * current_amount(8) currency(1) mint(32) goal_token_account(32)
- * status(1) bump(1) ... (remaining fields not needed here).
+ * Decodes just enough of a SavingsGoal to get goal_token_account,
+ * mint and status. Layout copied from state.rs, after the 8-byte
+ * discriminator: vault(32) goal_seq(4) name(32) target_amount(8)
+ * current_amount(8) currency(1) deadline(8) status(1) mint(32)
+ * goal_token_account(32) bump(1) created_at(8).
  */
 function decodeGoalMintAndTokenAccount(data) {
-  let o = 8 + 32 + 4 + 8 + 8 + 1; // through currency
-  const mint = new PublicKey(data.subarray(o, o + 32)); o += 32;
-  const goalTokenAccount = new PublicKey(data.subarray(o, o + 32)); o += 32;
-  const status = GoalStatus[data.readUInt8(o)] || 'Unknown';
+  const STATUS_OFFSET = 8 + 32 + 4 + 32 + 8 + 8 + 1 + 8; // 101
+  const status = GoalStatus[data.readUInt8(STATUS_OFFSET)] || 'Unknown';
+  const mint = new PublicKey(data.subarray(STATUS_OFFSET + 1, STATUS_OFFSET + 33));
+  const goalTokenAccount = new PublicKey(data.subarray(STATUS_OFFSET + 33, STATUS_OFFSET + 65));
   return { mint, goalTokenAccount, status };
 }
 

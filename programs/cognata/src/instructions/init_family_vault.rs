@@ -42,5 +42,6 @@ pub fn handler(
     vault.goal_seq = 0;
     vault.bump = ctx.bumps.vault;
     vault.created_at = Clock::get()?.unix_timestamp;
+    vault.creator = ctx.accounts.backend_authority.key();
     Ok(())
 }

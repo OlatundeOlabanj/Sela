@@ -9,7 +9,11 @@ pub struct InitSavingsGoal<'info> {
     #[account(mut)]
     pub backend_authority: Signer<'info>,
 
-    #[account(mut)]
+    /// Only the wallet that created the vault may add goals to it.
+    #[account(
+        mut,
+        constraint = vault.creator == backend_authority.key() @ FamilyWalletError::UnauthorizedContributor,
+    )]
     pub vault: Account<'info, FamilyVault>,
 
     #[account(

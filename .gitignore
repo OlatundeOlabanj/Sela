@@ -3,3 +3,5 @@ target/
 .anchor/
 .DS_Store
 *.log
+.test-wallets/
+.env
