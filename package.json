@@ -11,7 +11,8 @@
     "@coral-xyz/anchor": "^0.32.1",
     "@solana/spl-token": "^0.4.13",
     "@solana/web3.js": "^1.98.0",
-    "@netlify/blobs": "^8.1.0"
+    "@netlify/blobs": "^8.1.0",
+    "ws": "^8.22.0"
   },
   "devDependencies": {
     "@types/chai": "^4.3.20",
