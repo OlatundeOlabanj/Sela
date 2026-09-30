@@ -7,13 +7,13 @@ use crate::state::{FamilyVault, RecurringContributionDelegate, SavingsGoal};
 /// the account (rather than just flipping status to Cancelled)
 /// reclaims rent and, just as importantly, means
 /// execute_recurring_contribution can never succeed against it again
-/// — Anchor's Account<'info, T> validation requires the account to
+///, Anchor's Account<'info, T> validation requires the account to
 /// still exist and deserialize correctly, so a closed delegate is a
 /// hard stop, not just a status flag someone could theoretically
 /// route around.
 ///
 /// Note for hygiene: this does NOT revoke the underlying SPL Token
-/// `Approve` grant on the source token account — that approval
+/// `Approve` grant on the source token account, that approval
 /// technically still exists until revoked or replaced. Harmless in
 /// practice since this program's instructions require the delegate
 /// account to exist, but worth a client-side Revoke too for full
@@ -59,14 +59,13 @@ pub fn handler(
         _ => return err!(FamilyWalletError::UnauthorizedContributor),
     };
 
-    // TODO(passkey): expected_origin should come from program-level
-    // config once the frontend domain is finalized — placeholder now.
+    // Origin is the compile-time constant passkey::EXPECTED_ORIGIN.
     verify_passkey_authorization(
         &ctx.accounts.instructions_sysvar.to_account_info(),
         &expected_device_pubkey,
         &authenticator_data,
         &client_data_json,
-        b"https://app.familywallet.example",
+        crate::passkey::EXPECTED_ORIGIN,
         1,
     )?;
 

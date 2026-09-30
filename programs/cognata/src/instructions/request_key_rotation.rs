@@ -3,7 +3,7 @@ use crate::errors::FamilyWalletError;
 use crate::state::{FamilyVault, KeyRotationRequest, RotationStatus};
 
 /// Backend-authority-signed, deliberately NOT passkey-verified: this
-/// instruction moves no funds and grants no authority on its own — the
+/// instruction moves no funds and grants no authority on its own, the
 /// real security boundary is entirely downstream, at guardian approval
 /// in approve_key_rotation. Requiring the LOST device's own passkey
 /// signature here would also be circular (you can't sign with the

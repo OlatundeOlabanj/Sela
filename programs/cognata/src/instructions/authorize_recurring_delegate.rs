@@ -6,7 +6,7 @@ use crate::state::{FamilyVault, Frequency, RecurringContributionDelegate, Saving
 
 /// Records the recurring-contribution schedule AND grants the delegate
 /// PDA real SPL Approve authority over source_token_account, in the
-/// same instruction — CORRECTED from an earlier design that assumed
+/// same instruction, CORRECTED from an earlier design that assumed
 /// the contributor could submit a separate client-side Approve
 /// themselves. That only works for a normal wallet-owned account;
 /// source_token_account is owned by wallet_authority, a PDA with no
@@ -41,7 +41,7 @@ pub struct AuthorizeRecurringDelegate<'info> {
     pub delegate: Box<Account<'info, RecurringContributionDelegate>>,
 
     /// The contributing device's own token account that will fund
-    /// this schedule — must be owned by that device's wallet_authority
+    /// this schedule, must be owned by that device's wallet_authority
     /// PDA (checked below).
     #[account(mut)]
     pub source_token_account: Box<Account<'info, TokenAccount>>,
@@ -79,14 +79,13 @@ pub fn handler(
         _ => return err!(FamilyWalletError::UnauthorizedContributor),
     };
 
-    // TODO(passkey): expected_origin should come from program-level
-    // config once the frontend domain is finalized — placeholder now.
+    // Origin is the compile-time constant passkey::EXPECTED_ORIGIN.
     verify_passkey_authorization(
         &ctx.accounts.instructions_sysvar.to_account_info(),
         &expected_device_pubkey,
         &authenticator_data,
         &client_data_json,
-        b"https://app.familywallet.example",
+        crate::passkey::EXPECTED_ORIGIN,
         1 + 8 + 1 + 8, // device_role + amount_per_period + frequency + next_run_at
     )?;
 
@@ -106,7 +105,7 @@ pub fn handler(
     // the delegate PDA to move up to a generous multi-period ceiling.
     // The actual per-execution enforcement (exact amount, timing,
     // status) is our own program's job in execute_recurring_contribution
-    // — this SPL allowance is a ceiling, not the primary control.
+    //, this SPL allowance is a ceiling, not the primary control.
     let vault_key = ctx.accounts.vault.key();
     let wallet_bump = ctx.bumps.wallet_authority;
     let wallet_seeds: &[&[u8]] = &[b"wallet", vault_key.as_ref(), &[device_role], &[wallet_bump]];

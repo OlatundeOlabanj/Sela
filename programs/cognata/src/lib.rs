@@ -1,6 +1,6 @@
-// Cognata — Anchor program entrypoint
+// Cognata, Anchor program entrypoint
 // Family/couples Solana wallet, on-chain program (merged with VeilPay's
-// Smart TX Stack as the payment engine — see /lib/smart-tx-stack.md)
+// Smart TX Stack as the payment engine, see /lib/smart-tx-stack.md)
 // Made by TJS Code
 
 use anchor_lang::prelude::*;
@@ -17,7 +17,7 @@ use state::{Currency, FeeTier, Frequency};
 
 // TODO: replace with the real deployed program ID once `anchor keys sync`
 // (or `solana address -k target/deploy/cognata-keypair.json`) has
-// been run on your machine — this placeholder will not deploy correctly.
+// been run on your machine, this placeholder will not deploy correctly.
 declare_id!("6apQZUxBwpBbFNiBpYzGeMBQJ8328xrrsQ3aRcQhM2Av");
 
 #[program]
@@ -58,7 +58,7 @@ pub mod cognata {
     }
 
     /// The only instruction that can move funds out of the treasury
-    /// PDA. Gated to fee_config.admin — see the doc comment on
+    /// PDA. Gated to fee_config.admin, see the doc comment on
     /// ClaimFees in instructions/claim_fees.rs for why that admin
     /// pubkey must be a multisig in production.
     pub fn claim_fees(ctx: Context<ClaimFees>, amount: u64, decimals: u8) -> Result<()> {
@@ -165,7 +165,7 @@ pub mod cognata {
         )
     }
 
-    // ⚠️ MUST BE REMOVED BEFORE MAINNET — see the doc comment in
+    // ⚠️ MUST BE REMOVED BEFORE MAINNET, see the doc comment in
     // instructions/test_verify_passkey.rs for why it's being kept for now.
     pub fn test_verify_passkey(
         ctx: Context<TestVerifyPasskey>,

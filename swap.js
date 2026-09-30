@@ -10,7 +10,7 @@
  * confirmed nothing else still depended on it.
  *
  * 1% platform fee is deducted from swap output and routed
- * to the program's treasury PDA as a separate transfer in the
+ * to the configured fee destination as a separate transfer in the
  * same transaction batch as the swap broadcast.
  */
 
@@ -26,9 +26,9 @@ const SWAP_QUOTE_API = 'https://lite-api.jup.ag/swap/v1/quote';
 const SWAP_RPC = '/api/rpc';
 const SWAP_SLIPPAGE_BPS = 50;
 const SWAP_FEE_BPS = 100; // 1.00%
-// No fee wallet constant: the fee destination is derived at call-time
-// from window.PaymentTransfer.getTreasuryPda() (the program's
-// treasury PDA), not hardcoded here. See sendFeeTransfer below.
+// No fee wallet constant: the fee destination comes from
+// window.PaymentTransfer.getFeeDestinationOwner(), which reads
+// sela-config.js (FEE_MODE). See sendFeeTransfer below.
 const SWAP_EXECUTION_ENABLED = true; // re-enabled: MagicBlock removal left no dependency behind, verify with a small real swap before trusting it broadly
 
 const VeilSwapModule = (() => {
@@ -344,8 +344,8 @@ const VeilSwapModule = (() => {
 
   /**
    * Sends the 1% platform fee from the user's wallet to the
-   * program's treasury PDA (see payment-transfer.js getTreasuryPda,
-   * programs/cognata/src/state.rs Treasury). SOL uses a native
+   * configured fee destination (see payment-transfer.js
+   * getFeeDestinationOwner and sela-config.js). SOL uses a native
    * SystemProgram transfer. SPL tokens (USDC/USDT) use a standard SPL
    * token transfer instruction to the treasury's associated token
    * account, creating it first if it doesn't exist yet.
@@ -354,12 +354,12 @@ const VeilSwapModule = (() => {
     if (!rawAmount || rawAmount <= 0) return;
     if (!_hasWeb3()) return;
     if (typeof window.PaymentTransfer === 'undefined') {
-      throw new Error('payment-transfer.js must be loaded before swap.js (needs getTreasuryPda).');
+      throw new Error('payment-transfer.js must be loaded before swap.js (needs getFeeDestinationOwner).');
     }
 
     const connection = new window.solanaWeb3.Connection(SWAP_RPC, 'confirmed');
     const fromPubkey = new window.solanaWeb3.PublicKey(walletPubkey);
-    const feePubkey = window.PaymentTransfer.getTreasuryPda();
+    const feePubkey = window.PaymentTransfer.getFeeDestinationOwner();
 
     if (mint === SWAP_TOKENS.SOL.mint) {
       const tx = new window.solanaWeb3.Transaction().add(

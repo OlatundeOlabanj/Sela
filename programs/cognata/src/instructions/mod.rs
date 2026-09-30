@@ -12,12 +12,12 @@ pub mod request_key_rotation;
 pub mod test_verify_passkey;
 pub mod withdraw;
 
-// NOTE: glob re-exports are required here — Anchor's #[derive(Accounts)]
+// NOTE: glob re-exports are required here, Anchor's #[derive(Accounts)]
 // macro generates a `__client_accounts_*` module alongside each Accounts
 // struct, and #[program] in lib.rs expects those surfaced via
 // `instructions::*`. This does cause an "ambiguous glob re-exports"
 // warning (every module also exports a `handler` fn with the same
-// name) — harmless, since lib.rs calls each handler through a fully
+// name), harmless, since lib.rs calls each handler through a fully
 // qualified path (instructions::contribute::handler(...), etc.), never
 // through the ambiguous unqualified glob import. Suppressed below.
 #[allow(ambiguous_glob_reexports)]

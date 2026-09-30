@@ -47,7 +47,7 @@ describe("family-wallet: setup + manual contribution", () => {
     );
   });
 
-  it("initializes the fee config (idempotent — skips if it already exists)", async () => {
+  it("initializes the fee config (idempotent, skips if it already exists)", async () => {
     if (await connection.getAccountInfo(feeConfigPda)) {
       console.log("  fee_config already initialized, skipping");
       return;

@@ -34,11 +34,10 @@ const PAYMENT_CONFIG = {
 const TOKEN_PROGRAM_ID = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
 const ASSOCIATED_TOKEN_PROGRAM_ID = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL';
 
-// TODO: replace with the real deployed program ID once `anchor keys
-// sync` has run against programs/cognata (matches declare_id! in
-// programs/cognata/src/lib.rs) — this placeholder will not resolve to
-// the right treasury on-chain until then.
-const COGNATA_PROGRAM_ID = '6apQZUxBwpBbFNiBpYzGeMBQJ8328xrrsQ3aRcQhM2Av';
+// Program ID and fee routing come from sela-config.js (the one place
+// cluster and address settings live). It must be loaded first.
+const _SELA_CFG = window.SELA_CONFIG || {};
+const COGNATA_PROGRAM_ID = _SELA_CFG.PROGRAM_ID;
 
 const PaymentTransfer = (() => {
   function _web3() {
@@ -68,10 +67,23 @@ const PaymentTransfer = (() => {
     return ata;
   }
 
-  // There is no raw fee wallet anymore. The fee destination is the
+  // Owner of the fee token account for mainnet payments. In 'wallet'
+  // mode (the default until the program is deployed to mainnet) this is
+  // the configured fee wallet, so fees stay recoverable. In
+  // 'treasury_pda' mode it is the program's treasury PDA. A PDA of a
+  // program that is not deployed on mainnet must never receive fees,
+  // nothing could ever sign for it.
+  function getFeeDestinationOwner() {
+    const web3 = _web3();
+    if (_SELA_CFG.FEE_MODE === 'treasury_pda') return getTreasuryPda();
+    if (!_SELA_CFG.FEE_WALLET) throw new Error('FEE_WALLET missing from sela-config.js');
+    return new web3.PublicKey(_SELA_CFG.FEE_WALLET);
+  }
+
+  // The program treasury PDA. The fee destination is the
   // Cognata program's own [b"treasury"] PDA (see
   // programs/cognata/src/state.rs Treasury /
-  // instructions/claim_fees.rs) — a program-owned address with no
+  // instructions/claim_fees.rs), a program-owned address with no
   // private key, derived deterministically here from the program ID,
   // not a pubkey that lives as a string anyone could swap out.
   function getTreasuryPda() {
@@ -133,7 +145,7 @@ const PaymentTransfer = (() => {
     const payer = new web3.PublicKey(payerWallet);
     const recipient = new web3.PublicKey(recipientWallet);
     const mint = new web3.PublicKey(PAYMENT_CONFIG.usdcMint);
-    const feeWallet = getTreasuryPda();
+    const feeWallet = getFeeDestinationOwner();
 
     const totalBaseUnits = _toBaseUnits(amount);
     const feeBaseUnits = Math.floor(totalBaseUnits * PAYMENT_CONFIG.invoiceFeeBps / 10_000);
@@ -166,6 +178,7 @@ const PaymentTransfer = (() => {
   return {
     getAssociatedTokenAddress,
     getTreasuryPda,
+    getFeeDestinationOwner,
     buildPaymentTransaction,
     config: PAYMENT_CONFIG,
   };

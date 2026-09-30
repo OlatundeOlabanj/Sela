@@ -6,16 +6,16 @@ use crate::state::{FamilyVault, GoalStatus, SavingsGoal};
 
 /// v1: either registered device can withdraw the full or partial goal
 /// balance to their own token account. No guardian approval required
-/// for withdrawal in v1 — deliberate scope choice, guardian authority
+/// for withdrawal in v1, deliberate scope choice, guardian authority
 /// is recovery-only, not a spending control.
 ///
 /// Unlike contribute.rs, this does NOT need wallet_authority as a CPI
-/// signer — funds move FROM the shared goal (owned by the goal PDA)
+/// signer, funds move FROM the shared goal (owned by the goal PDA)
 /// TO the person, not from their personal holding account. The
 /// destination_token_account has no separate ownership constraint
 /// here because it doesn't need one: it's part of this transaction's
 /// account list, which is included in the full-transaction hash the
-/// passkey signature commits to — any substitution of the destination
+/// passkey signature commits to, any substitution of the destination
 /// would invalidate the signature.
 #[derive(Accounts)]
 #[instruction(device_role: u8)]
@@ -65,14 +65,13 @@ pub fn handler(
         _ => return err!(FamilyWalletError::UnauthorizedContributor),
     };
 
-    // TODO(passkey): expected_origin should come from program-level
-    // config once the frontend domain is finalized — placeholder now.
+    // Origin is the compile-time constant passkey::EXPECTED_ORIGIN.
     verify_passkey_authorization(
         &ctx.accounts.instructions_sysvar.to_account_info(),
         &expected_device_pubkey,
         &authenticator_data,
         &client_data_json,
-        b"https://app.familywallet.example",
+        crate::passkey::EXPECTED_ORIGIN,
         10,
     )?;
 

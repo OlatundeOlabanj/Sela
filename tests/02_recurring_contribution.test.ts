@@ -15,7 +15,7 @@ import { DEVNET_USDC_MINT, USDC_DECIMALS } from "../scripts/constants";
 
 const GOAL_SEQ = 1;
 
-describe("family-wallet: recurring contribution (delegated authority) — highest risk", () => {
+describe("family-wallet: recurring contribution (delegated authority), highest risk", () => {
   const { program, provider } = getProgram();
   const connection = provider.connection;
 
@@ -132,7 +132,7 @@ describe("family-wallet: recurring contribution (delegated authority) — highes
     }
   });
 
-  it("anyone (a keeper — not primary/partner) can execute a due recurring contribution", async () => {
+  it("anyone (a keeper, not primary/partner) can execute a due recurring contribution", async () => {
     await new Promise((resolve) => setTimeout(resolve, 3000));
 
     const before = await getAccount(connection, goalUsdcAta);

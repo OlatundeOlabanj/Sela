@@ -23,7 +23,7 @@ pub struct InitTreasury<'info> {
 /// This PDA (not any keypair) becomes the program-wide fee-collection
 /// authority. Its USDC associated token account is created separately
 /// (standard `create_associated_token_account`, permissionless, owner
-/// = this PDA) the first time a fee actually needs to land there —
+/// = this PDA) the first time a fee actually needs to land there ,
 /// no special instruction needed for that part, anchor_spl's
 /// `associated_token::authority = treasury` constraint on the
 /// receiving side just requires the ATA to already exist at the

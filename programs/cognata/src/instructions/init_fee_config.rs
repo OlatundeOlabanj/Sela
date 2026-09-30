@@ -20,7 +20,8 @@ pub struct InitFeeConfig<'info> {
 }
 
 /// Deployed once, ever, per program. Whoever signs this becomes the
-/// admin who can later call `update_fee_config`. Run this immediately
+/// admin who can call `claim_fees`. On mainnet this must be a
+/// multisig, see DEPLOY.md. Run this immediately
 /// after program deploy, before any FamilyVault is created.
 pub fn handler(
     ctx: Context<InitFeeConfig>,

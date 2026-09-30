@@ -1,4 +1,4 @@
-// Family Wallet — On-chain Account Structs (v1 draft)
+// Family Wallet, On-chain Account Structs (v1 draft)
 // Made by TJS Code
 //
 // This file defines account layouts only. Instruction handlers
@@ -12,7 +12,7 @@
 //   RecurringContributionDelegate: [b"delegate", goal.key().as_ref()]
 //   KeyRotationRequest:            [b"rotation", vault.key().as_ref(), &[device_role]]
 //     device_role: 0 = primary_contributor_device, 1 = partner_device.
-//     NOTE: seeded on a role byte, not the raw device pubkey — a
+//     NOTE: seeded on a role byte, not the raw device pubkey, a
 //     33-byte secp256r1 key exceeds Solana's 32-byte-per-seed limit,
 //     and a role byte is simpler/clearer anyway ("the pending rotation
 //     for the partner slot", not "for device X").
@@ -31,7 +31,7 @@ pub enum FeeTier {
 /// Singleton config account (one per program deployment). Holds the
 /// actual fee amount per tier, so pricing can change globally without
 /// touching any individual FamilyVault. FamilyVault only stores WHICH
-/// tier it's on — that's the auditable, on-chain-visible part. Mutable
+/// tier it's on, that's the auditable, on-chain-visible part. Mutable
 /// only by an admin authority (decide at instruction-design time
 /// whether that's your program's upgrade authority or a dedicated
 /// admin pubkey).
@@ -40,7 +40,7 @@ pub struct FeeConfig {
     pub admin: Pubkey,
     pub standard_fee_amount: u64,
     pub founding_fee_amount: u64,
-    // Waived tier is implicitly 0 — no field needed, which is itself
+    // Waived tier is implicitly 0, no field needed, which is itself
     // a nice auditing property: "Waived" can never accidentally charge.
     pub bump: u8,
 }
@@ -50,7 +50,7 @@ impl FeeConfig {
 }
 
 /// Singleton PDA, [b"treasury"], one per program deployment. This is
-/// the ONLY valid fee destination in the whole program — every
+/// the ONLY valid fee destination in the whole program, every
 /// instruction that charges a fee constrains its fee-destination
 /// token account to this PDA's associated token account via
 /// `associated_token::authority = treasury`, so there is no code path
@@ -60,7 +60,7 @@ impl FeeConfig {
 /// gated to `fee_config.admin`.
 ///
 /// `admin` on FeeConfig should be set to a multisig (e.g. a Squads
-/// vault) at `init_fee_config` time, not a personal keypair — the PDA
+/// vault) at `init_fee_config` time, not a personal keypair, the PDA
 /// removes the "raw wallet" risk on the receiving end, but claiming
 /// out of it is still a single signature unless the admin itself is a
 /// multisig. Both halves matter.
@@ -68,7 +68,7 @@ impl FeeConfig {
 pub struct Treasury {
     pub bump: u8,
     /// Running total ever claimed out, in the token's base units.
-    /// Audit trail only — not used for any balance check, since the
+    /// Audit trail only, not used for any balance check, since the
     /// actual balance is the token account's own amount field.
     pub total_claimed: u64,
 }
@@ -83,7 +83,7 @@ impl Treasury {
 pub struct FamilyVault {
     /// This PDA's own address, stored for convenience in downstream CPIs.
     pub vault_authority: Pubkey,
-    /// Dedicated nonce used ONLY to derive this vault's PDA address —
+    /// Dedicated nonce used ONLY to derive this vault's PDA address ,
     /// deliberately decoupled from any authentication material. Two
     /// real bugs taught us this: (1) seeding on primary_contributor
     /// broke once that field became mutable via rotation, and (2)
@@ -94,13 +94,13 @@ pub struct FamilyVault {
     /// problems permanently.
     pub vault_seed: Pubkey,
     /// Day-to-day signer #1. Registered passkey pubkey (secp256r1,
-    /// 33-byte compressed point) — NOT a conventional Ed25519 keypair.
+    /// 33-byte compressed point), NOT a conventional Ed25519 keypair.
     /// Verified via the secp256r1 precompile + instruction
     /// introspection, not via a normal Signer check.
     pub primary_contributor_device: [u8; 33],
     /// Day-to-day signer #2. Same verification mechanism as above.
     pub partner_device: [u8; 33],
-    /// Recovery-only. A normal Ed25519 pubkey — the guardian is NOT
+    /// Recovery-only. A normal Ed25519 pubkey, the guardian is NOT
     /// passkey-based, deliberately, since guardian approval is a rare,
     /// high-stakes action better suited to a conventional wallet
     /// signature than a device-bound passkey.
@@ -111,6 +111,10 @@ pub struct FamilyVault {
     pub goal_seq: u32,
     pub bump: u8,
     pub created_at: i64,
+    /// The wallet that created this vault. Only this wallet may add
+    /// goals to it (init_savings_goal), otherwise anyone could add
+    /// goals to anyone's vault. Appended last so no earlier offset moves.
+    pub creator: Pubkey,
 }
 impl FamilyVault {
     pub const SPACE: usize =
@@ -123,7 +127,8 @@ impl FamilyVault {
         + 1  // fee_tier
         + 4  // goal_seq
         + 1  // bump
-        + 8; // created_at
+        + 8  // created_at
+        + 32; // creator
 }
 
 #[repr(u8)]
@@ -145,13 +150,13 @@ pub enum GoalStatus {
 
 /// v1: one shared savings goal per family vault (goal_seq will be 0
 /// for every vault in v1, but the struct doesn't hardcode that
-/// assumption — keeps the door open without a migration later).
+/// assumption, keeps the door open without a migration later).
 #[account]
 pub struct SavingsGoal {
     pub vault: Pubkey,
     pub goal_seq: u32,
 
-    pub name: [u8; 32],       // fixed-size, UTF-8, zero-padded — keeps rent predictable
+    pub name: [u8; 32],       // fixed-size, UTF-8, zero-padded, keeps rent predictable
     pub target_amount: u64,
     pub current_amount: u64,
     pub currency: Currency,
@@ -161,7 +166,7 @@ pub struct SavingsGoal {
     /// Token mint this goal is denominated in. CORRECTION from earlier
     /// draft: SOL goals use the wSOL mint (native SOL has no delegate/
     /// approve mechanism, so recurring contributions are impossible
-    /// without wrapping — see RecurringContributionDelegate). Both
+    /// without wrapping, see RecurringContributionDelegate). Both
     /// Currency variants are therefore always SPL token accounts.
     pub mint: Pubkey,
 
@@ -194,14 +199,14 @@ pub enum Frequency {
 }
 
 /// The delegated-authority account. This is the highest-risk struct in
-/// v1 — it exists specifically so a parent doesn't have to manually sign
+/// v1, it exists specifically so a parent doesn't have to manually sign
 /// every recurring DCA transfer. The Celery scheduler submits contribute
 /// transactions on this delegate's behalf; the program must verify:
 ///   1. the delegate PDA matches this account exactly (seeds constraint)
 ///   2. amount <= amount_per_period (never more than authorized)
 ///   3. now >= next_run_at (never early)
 ///   4. status == Active
-/// This account itself holds NO signing key off-chain — it's a PDA,
+/// This account itself holds NO signing key off-chain, it's a PDA,
 /// so only the program (via CPI with the right seeds) can move funds
 /// under it. There is no separate "delegate keypair" to leak.
 #[account]
@@ -210,7 +215,7 @@ pub struct RecurringContributionDelegate {
     pub vault: Pubkey,
 
     /// Which registered contributor this recurring schedule is
-    /// attributed to in Contribution records (for UI/history only —
+    /// attributed to in Contribution records (for UI/history only ,
     /// authorization comes from the PDA, not this field).
     pub authorized_by_role: u8,
 
@@ -247,8 +252,8 @@ pub enum RotationStatus {
 }
 
 /// Second highest-risk struct in v1. Guardian-alone approval (per
-/// current decision — no partner veto window in v1). Seeded on a role
-/// byte (device_role), not the raw device pubkey — a 33-byte secp256r1
+/// current decision, no partner veto window in v1). Seeded on a role
+/// byte (device_role), not the raw device pubkey, a 33-byte secp256r1
 /// key exceeds Solana's 32-byte-per-seed limit. One open request per
 /// role at a time; PDA seeds enforce that (re-requesting while Pending
 /// should fail, not silently overwrite).
@@ -260,12 +265,12 @@ pub struct KeyRotationRequest {
     /// PDA seed component identifying which slot this request targets.
     pub device_role: u8,
 
-    /// Snapshotted from the vault at request time, for audit — not
+    /// Snapshotted from the vault at request time, for audit, not
     /// itself load-bearing for authorization (device_role + vault is).
     pub lost_device_pubkey: [u8; 33],
     pub new_device_pubkey: [u8; 33],
 
-    /// Must equal FamilyVault.guardian at approval time — checked in
+    /// Must equal FamilyVault.guardian at approval time, checked in
     /// the instruction, stored here for audit/history.
     pub guardian: Pubkey,
 
