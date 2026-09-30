@@ -291,3 +291,20 @@ Zip copied to `/mnt/user-data/outputs/goal-token-dbc.zip` and presented.
 - No GitHub management tool connected.
 - These were surfaced to the user at the point each became relevant, not held back or worked
   around silently.
+
+
+---
+
+## 7. App integration pass (Sept 28)
+
+Built the server functions, client and panel for the goal token. Full detail is in `APP_INTEGRATION.md`.
+
+**Verified, offline:** 12 unit tests pass against mocks. They prove the settled decisions (flat 1 percent fee, dynamic fee off, quote token fees, DAMM v2, 100 percent creator locked LP, threshold equal to the goal, USDC by cluster) reach the SDK call, that the create function only ever signs with two throwaway keypairs, and that the buy, status, registry and send paths reject what they should. `node --check` passes on every file. No em-dashes or double hyphen dashes in any file.
+
+**Not verified:** every call into the real SDK, because the sandbox has no npm access. `sdk-adapter.js` is written from public docs and is the single place to fix. The panel was not run in a browser.
+
+**Found while reading the SDK docs (research only, no code run):**
+- The SDK's parameter names differ between releases and a 2.0.0 is pending with `createConfig2`. Pin to the POC's version.
+- Pool creation needs the creator to sign, so the pool creator cannot be the Treasury PDA in a client signed flow. This corrects section 4.3, which said `dbcPool.creator` takes the PDA. `feeClaimer` and `leftoverReceiver` still do. See `APP_INTEGRATION.md`, known gap 2.
+
+**Still waiting on:** the devnet POC output, the Cognata program deploy (for the treasury address), and the current RUNBOOK.md, which this session has not seen and so has not edited.
