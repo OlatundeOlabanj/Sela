@@ -16,6 +16,7 @@
 
 const { getRpcUrlForCluster, isValidCluster } = require('../../lib/rpcClient');
 const { isAllowedOrigin } = require('../../lib/originGuard');
+const { scrubSecrets } = require('../../lib/secretScrub');
 
 exports.handler = async (event) => {
   const headers = {
@@ -77,7 +78,7 @@ exports.handler = async (event) => {
   } catch (err) {
     // err.message can contain the request URL on some fetch failures,
     // so it is not echoed back. Log server side only.
-    console.error('rpc-proxy upstream failure:', err && err.message);
+    console.error('rpc-proxy upstream failure:', scrubSecrets(err && err.message));
     return {
       statusCode: 502,
       headers,

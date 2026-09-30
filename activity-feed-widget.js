@@ -1,15 +1,16 @@
 // activity-feed-widget.js
 //
-// Drop-in activity feed panel. Mounts into any element with
-// id="activityFeed" and polls /.netlify/functions/activity-feed.
-// Uses the existing design tokens from style.css (--bg-card, --accent,
-// --font-mono, .card), so it matches the rest of the dashboard without
-// its own stylesheet. Inline SVG icons only, no emojis.
+// Drop-in activity feed panel. Mounts into #activity-feed-mount (the
+// real dashboard mount from MOUNTS.md) and polls
+// /.netlify/functions/activity-feed. Falls back to #activityFeed for
+// backward compatibility during the shim period; once this is
+// confirmed working, tell Tunde so Session A can drop the shim in
+// MOUNTS.md and this fallback can be removed.
 //
-// Usage: add <div id="activityFeed" class="card"></div> wherever the
-// feed should appear (a new dashboard tab, a sidebar, etc), then
-// include this script. Not yet wired into dashboard.html's tab nav,
-// since that depends on the merged repo's final tab structure.
+// Always labels its data honestly: a clear "Mock data" badge when
+// source is 'mock', "Live via Solami" plus the filters used when
+// source is 'solami'. Uses the existing style.css tokens (--bg-card,
+// --accent, --font-mono, .card). Inline SVG icons only, no emojis.
 //
 // Made by TJS Code
 
@@ -49,6 +50,16 @@
       </div>`;
   }
 
+  function renderLabel(source, filters) {
+    if (source === 'solami') {
+      const parts = ['Live via Solami'];
+      if (filters && filters.type) parts.push('type: ' + filters.type);
+      if (filters && filters.address) parts.push('address: ' + filters.address.slice(0, 6) + '...');
+      return `<div style="font-size:0.72rem;color:var(--accent);font-family:var(--font-mono);margin-bottom:0.5rem;">${parts.join(' | ')}</div>`;
+    }
+    return `<div style="font-size:0.72rem;color:var(--text-muted);font-family:var(--font-mono);margin-bottom:0.5rem;">Mock data, Solami not connected yet</div>`;
+  }
+
   async function loadFeed(container) {
     try {
       const res = await fetch('/.netlify/functions/activity-feed');
@@ -57,18 +68,19 @@
         container.innerHTML = `<div style="color:var(--text-muted);font-size:0.85rem;padding:1rem 0;">Activity feed unavailable.</div>`;
         return;
       }
+      const label = renderLabel(data.source, data.filters);
       if (data.events.length === 0) {
-        container.innerHTML = `<div style="color:var(--text-muted);font-size:0.85rem;padding:1rem 0;">No activity yet.</div>`;
+        container.innerHTML = label + `<div style="color:var(--text-muted);font-size:0.85rem;padding:1rem 0;">No activity yet.</div>`;
         return;
       }
-      container.innerHTML = data.events.map(renderEvent).join('');
+      container.innerHTML = label + data.events.map(renderEvent).join('');
     } catch (err) {
       container.innerHTML = `<div style="color:var(--text-muted);font-size:0.85rem;padding:1rem 0;">Activity feed unavailable.</div>`;
     }
   }
 
   function init() {
-    const container = document.getElementById('activityFeed');
+    const container = document.getElementById('activity-feed-mount') || document.getElementById('activityFeed');
     if (!container) return;
     loadFeed(container);
     setInterval(() => loadFeed(container), 30000);

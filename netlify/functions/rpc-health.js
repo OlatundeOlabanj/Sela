@@ -18,6 +18,7 @@
 
 const { getRpcUrl, getProviderInfo } = require('../../lib/rpcClient');
 const { isAllowedOrigin } = require('../../lib/originGuard');
+const { scrubSecrets } = require('../../lib/secretScrub');
 
 const CACHE_MS = 15000;
 const SAMPLES = 3;
@@ -90,7 +91,7 @@ exports.handler = async (event) => {
   } catch (err) {
     // Log the reason server side. The response never carries err.message
     // because a failed fetch can include the request URL.
-    console.error('rpc-health failure:', err && err.message);
+    console.error('rpc-health failure:', scrubSecrets(err && err.message));
     return {
       statusCode: 502,
       headers,
