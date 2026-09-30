@@ -35,6 +35,16 @@ into your mount from your own script.
   `#activity-feed-mount` itself, tell Tunde and Session A will drop the
   shim.
 
+## RPC status pill (Session C)
+
+```html
+<span id="rpc-status-mount"></span>
+```
+
+Lives next to the cluster badges in the dashboard header, always
+visible, not tab-gated. `rpc-status-pill.js` is already loaded in
+`dashboard.html`, added as soon as it landed on main, no need to ask.
+
 ## Getting your script loaded
 
 `dashboard.html` only loads scripts that exist on `main`. When your

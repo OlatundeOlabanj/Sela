@@ -26,28 +26,28 @@
     main { flex: 1; }
 
     .pay-wrapper { display: flex; align-items: flex-start; justify-content: center; padding: 3rem 1.25rem; min-height: 80vh; }
-    .pay-card { width: 100%; max-width: 520px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-lg); }
+    .pay-card { width: 100%; max-width: 520px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
     .pay-card-bar { height: 4px; background: linear-gradient(90deg, var(--accent), #fbbf24); }
     .pay-card-body { padding: 2rem; }
 
     .pay-issuer { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.75rem; }
-    .pay-issuer-avatar { width: 40px; height: 40px; background: var(--accent-dim); border: 1px solid rgba(245,158,11,0.3); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .pay-issuer-label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 2px; }
-    .pay-issuer-wallet { font-family: var(--font-mono); font-size: 0.9rem; font-weight: 600; color: var(--text); }
+    .pay-issuer-avatar { width: 40px; height: 40px; background: var(--bg-card-2); border: 1px solid var(--border-light); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .pay-issuer-label { font-size: var(--text-xs); color: var(--text-muted); margin-bottom: 2px; }
+    .pay-issuer-wallet { font-family: var(--font-mono); font-size: var(--text-sm); font-weight: 600; color: var(--text); }
 
     .pay-details { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 1.25rem; }
     .pay-detail-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 0.85rem 1.1rem; border-bottom: 1px solid var(--border); }
     .pay-detail-row:last-child { border-bottom: none; }
-    .pay-detail-label { font-size: 0.8rem; color: var(--text-muted); flex-shrink: 0; padding-top: 1px; }
-    .pay-detail-value { font-size: 0.9rem; color: var(--text); text-align: right; font-weight: 500; }
+    .pay-detail-label { font-size: var(--text-xs); color: var(--text-muted); flex-shrink: 0; padding-top: 1px; }
+    .pay-detail-value { font-size: var(--text-sm); color: var(--text); text-align: right; font-weight: 500; }
     .pay-line-items { padding: 0.6rem 1.1rem; border-bottom: 1px solid var(--border); }
-    .pay-line-item-row { display: flex; justify-content: space-between; gap: 1rem; padding: 0.3rem 0; font-size: 0.85rem; }
+    .pay-line-item-row { display: flex; justify-content: space-between; gap: 1rem; padding: 0.3rem 0; font-size: var(--text-xs); }
     .pay-line-item-desc { color: var(--text-muted); }
     .pay-line-item-amount { color: var(--text); font-family: var(--font-mono); font-weight: 500; flex-shrink: 0; }
-    .pay-amount-large { font-family: var(--font-mono); font-size: 1.6rem; font-weight: 700; color: var(--accent); letter-spacing: -0.03em; }
-    .pay-fee-note { font-size: 0.72rem; color: var(--text-dim); text-align: right; margin-top: 2px; }
+    .pay-amount-large { font-family: var(--font-mono); font-size: var(--text-lg); font-weight: 700; color: var(--accent); letter-spacing: -0.03em; }
+    .pay-fee-note { font-size: var(--text-xs); color: var(--text-dim); text-align: right; margin-top: 2px; }
 
-    .reliability-notice { display: flex; align-items: flex-start; gap: 0.65rem; background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.2); border-radius: var(--radius-sm); padding: 0.85rem 1rem; margin-bottom: 1.25rem; font-size: 0.82rem; color: #fbbf24; line-height: 1.55; }
+    .reliability-notice { display: flex; align-items: flex-start; gap: 0.65rem; background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.2); border-radius: var(--radius-sm); padding: 0.85rem 1rem; margin-bottom: 1.25rem; font-size: var(--text-xs); color: #fbbf24; line-height: 1.55; }
     .reliability-notice svg { flex-shrink: 0; margin-top: 1px; }
 
     .pay-state { display: none; }
@@ -61,29 +61,29 @@
     .step-icon { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: var(--bg-card-2); border: 1px solid var(--border-light); }
     .step-row.active .step-icon { background: rgba(245,158,11,0.15); border-color: var(--accent); }
     .step-row.done .step-icon { background: rgba(16,185,129,0.15); border-color: var(--success); }
-    .step-text { font-size: 0.85rem; color: var(--text-muted); }
+    .step-text { font-size: var(--text-xs); color: var(--text-muted); }
     .step-row.active .step-text, .step-row.done .step-text { color: var(--text); font-weight: 500; }
     .step-spinner { width: 12px; height: 12px; border: 2px solid rgba(245,158,11,0.25); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
 
     .loading-panel { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 1rem; text-align: center; }
-    .loading-panel h4 { color: var(--text); font-size: 1rem; }
-    .loading-panel p { font-size: 0.875rem; }
+    .loading-panel h4 { color: var(--text); font-size: var(--text-sm); }
+    .loading-panel p { font-size: var(--text-xs); }
 
     .success-panel { padding: 1.5rem 0 0.5rem; text-align: center; }
-    .success-panel h3 { color: var(--success); margin-bottom: 0.5rem; font-size: 1.3rem; }
-    .success-panel p { font-size: 0.875rem; margin-bottom: 1.25rem; }
-    .tx-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 0.4rem; text-align: left; }
+    .success-panel h3 { color: var(--success); margin-bottom: 0.5rem; font-size: var(--text-md); }
+    .success-panel p { font-size: var(--text-xs); margin-bottom: 1.25rem; }
+    .tx-label { font-size: var(--text-xs); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 0.4rem; text-align: left; }
 
     .error-panel { text-align: center; padding: 1rem 0; }
     .error-panel h4 { color: var(--error); margin-bottom: 0.4rem; }
-    .error-panel p { font-size: 0.875rem; }
+    .error-panel p { font-size: var(--text-xs); }
 
     .not-found { text-align: center; padding: 3rem 2rem; }
     .not-found svg { margin: 0 auto 1.25rem; opacity: 0.3; }
     .not-found h3 { margin-bottom: 0.5rem; }
-    .not-found p { font-size: 0.875rem; margin-bottom: 1.5rem; }
+    .not-found p { font-size: var(--text-xs); margin-bottom: 1.5rem; }
 
-    .solana-badge { display: flex; align-items: center; justify-content: center; gap: 0.4rem; font-size: 0.75rem; color: var(--text-dim); margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+    .solana-badge { display: flex; align-items: center; justify-content: center; gap: 0.4rem; font-size: var(--text-xs); color: var(--text-dim); margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
@@ -141,7 +141,7 @@
 
           <div class="pay-issuer">
             <div class="pay-issuer-avatar">
-              <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#f59e0b" stroke-width="2">
+              <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="var(--text-muted)" stroke-width="2">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
               </svg>
             </div>
@@ -172,7 +172,7 @@
             <div class="pay-detail-row" style="background:rgba(245,158,11,0.04);">
               <span class="pay-detail-label" style="padding-top:4px;">Total Due</span>
               <div>
-                <div id="detailAmount" class="pay-amount-large">0.00 USDC</div>
+                <div id="detailAmount" class="pay-amount-large">Loading&hellip;</div>
                 <div id="detailStatus" style="text-align:right;margin-top:4px;"></div>
               </div>
             </div>
@@ -199,13 +199,13 @@
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <polyline points="20 6 9 17 4 12"/>
               </svg>
-              <span id="payerAddressDisplay" style="font-family:var(--font-mono);font-size:0.82rem;">Wallet connected</span>
+              <span id="payerAddressDisplay" style="font-family:var(--font-mono);font-size: var(--text-xs);">Wallet connected</span>
             </div>
-            <button id="payNowBtn" class="btn btn-primary btn-full btn-lg" onclick="handlePayNow()">
+            <button id="payNowBtn" class="btn btn-primary btn-full btn-lg" onclick="handlePayNow()" disabled>
               <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
               </svg>
-              <span id="payBtnLabel">Pay 0.00 USDC</span>
+              <span id="payBtnLabel">Loading invoice&hellip;</span>
             </button>
           </div>
 
@@ -255,7 +255,7 @@
                 </svg>
                 <div>
                   <div style="font-weight:600;margin-bottom:3px;">Payment Failed</div>
-                  <div id="errorMessage" style="font-size:0.82rem;">An unexpected error occurred.</div>
+                  <div id="errorMessage" style="font-size: var(--text-xs);">An unexpected error occurred.</div>
                 </div>
               </div>
               <button class="btn btn-ghost btn-full" onclick="resetToReady()">Try Again</button>
@@ -362,6 +362,7 @@
       document.getElementById('detailAmount').textContent  = Cognata.formatAmount(invoice.amount) + ' USDC';
       document.getElementById('detailStatus').innerHTML    = Cognata.statusBadge(invoice.status);
       document.getElementById('payBtnLabel').textContent   = `Pay ${Cognata.formatAmount(invoice.amount)} USDC`;
+      document.getElementById('payNowBtn').disabled = false;
     }
 
     function showNotFound() { document.getElementById('notFoundCard').style.display = 'block'; }
