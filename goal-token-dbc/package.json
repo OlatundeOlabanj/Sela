@@ -1,0 +1,15 @@
+{
+  "name": "goal-token-dbc",
+  "version": "0.1.0",
+  "description": "Goal Token feature: DBC config generation and devnet POC runner for Meteora savings goals",
+  "private": true,
+  "scripts": {
+    "poc": "ts-node src/run-poc.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "ts-node": "^10.9.0",
+    "@types/node": "^20.0.0"
+  }
+}
