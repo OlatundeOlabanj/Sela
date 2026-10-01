@@ -85,12 +85,12 @@
     // placeholder (`anchor keys sync` will change it). Deriving the PDA against a placeholder ID
     // would produce an address that goes stale at deploy, not a real one. See PROCESS_LOG.md
     // section 4.3 for the full resolution note and the exact derivation to run once deployed.
-    "leftoverReceiver": "CANNOT_RESOLVE_UNTIL_DEPLOY__see_PROCESS_LOG_4.3",
-    "feeClaimer": "CANNOT_RESOLVE_UNTIL_DEPLOY__see_PROCESS_LOG_4.3"
+    "leftoverReceiver": "BoPLuCRknf79Dr3YpCT7Q5D7HMjYTubRWKqMgrTjYN27", // real Cognata treasury PDA (program EPqdJo6sJP9R3RCKh2RFLMt7T6orrkjV1ub584dcM2Vr, devnet, deployed Oct 1)
+    "feeClaimer": "BoPLuCRknf79Dr3YpCT7Q5D7HMjYTubRWKqMgrTjYN27"
   },
 
   "dbcPool": {
-    "creator": "CANNOT_RESOLVE_UNTIL_DEPLOY__see_PROCESS_LOG_4.3",
+    "creator": "REPLACE_WITH_YOUR_OWN_DEVNET_WALLET", // must be Tunde's connected wallet pubkey, a PDA cannot sign pool creation (run `solana address`)
     "name": "GOAL_TOKEN_NAME",
     "symbol": "GOALSYM",
     "metadata": {
