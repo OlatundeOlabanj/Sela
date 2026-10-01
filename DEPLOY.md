@@ -11,12 +11,21 @@ there is no measured binary size yet.** Do not trust any size number
 until you have run step 2 below on your machine. The commands in step 2
 give you the exact byte count and the exact rent in one go.
 
-Size work already done in the source, all unverified until you build:
+**Update:** the program has since been built and deployed to devnet for
+real (program ID `EPqdJo6sJP9R3RCKh2RFLMt7T6orrkjV1ub584dcM2Vr`), fee
+config and treasury initialized. The paragraphs below describe what this
+session could and couldn't verify at the time it was written, kept for
+the record, the actual build already answered some of it, and corrected
+one guess: `token_2022` turned out to be needed after all (the IDL build
+macro pulls in `token_interface` regardless of whether any instruction
+actually uses a Token-2022 account), dropping it broke `anchor build`,
+it's back in `programs/cognata/Cargo.toml`.
+
+Size work attempted in the source, before the real build corrected the
+token_2022 guess above:
 
 - `opt-level = "z"` added to `[profile.release]` in `Cargo.toml`
   (`lto = "fat"` and `codegen-units = 1` were already there).
-- Unused `token_2022` feature dropped from `anchor-spl` in
-  `programs/cognata/Cargo.toml` (nothing in the program uses Token-2022).
 - The placeholder passkey origin `https://app.familywallet.example` is
   replaced by one constant, `EXPECTED_ORIGIN` in `passkey.rs`, set to
   `https://selaaa.netlify.app`. The old value would have made every

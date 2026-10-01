@@ -9,7 +9,7 @@
  * mainnet-beta regardless of this value.
  *
  * PROGRAM_ID: keep in sync with declare_id! in programs/cognata/src/lib.rs.
- * Still the placeholder until the first real deploy, see DEPLOY.md.
+ * Live on devnet as of the Oct 1 deploy, see DEPLOY.md.
  *
  * FEE_MODE: where the platform fee on mainnet payments is sent.
  *   'wallet'       send to FEE_WALLET (interim, used while the program is
