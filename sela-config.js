@@ -22,7 +22,7 @@
  */
 const SELA_CONFIG = {
   PROGRAM_CLUSTER: 'devnet',
-  PROGRAM_ID: '6apQZUxBwpBbFNiBpYzGeMBQJ8328xrrsQ3aRcQhM2Av',
+  PROGRAM_ID: 'EPqdJo6sJP9R3RCKh2RFLMt7T6orrkjV1ub584dcM2Vr',
   FEE_MODE: 'wallet',
   FEE_WALLET: 'CjFuX951H7xEoLD3Gzbht5pqK7baoGZ6q32SfUQxNdWS',
 };
