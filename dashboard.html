@@ -344,14 +344,84 @@
 
       <!-- ── TAB: Goals ── -->
       <div id="tab-goals" class="tab-pane active">
-        <div class="card" style="max-width:720px;margin:0 auto;">
-          <div class="card-header">
-            <span class="panel-title">Shared savings goals</span>
-            <span class="pill pill-build">In build</span>
+        <div class="card" style="max-width:520px;margin:0 auto;">
+
+          <!-- Program not deployed on this cluster: honest state, no CTA pretending otherwise -->
+          <div id="goalsNotDeployed" style="display:none;">
+            <div class="card-header"><span class="panel-title">Shared savings goal</span></div>
+            <p class="pane-note">The Sela program has not been deployed to <span id="goalsClusterName">devnet</span> yet, so there is nothing to connect to. Goals will work here once it is. See DEPLOY.md.</p>
           </div>
-          <p class="pane-note" style="margin-bottom:1rem;">Create a goal with a USDC target, let each registered member contribute with a passkey, and read the balance straight from the chain.</p>
-          <p class="pane-note" id="goalsStatusNote">Goals run on the Sela program. Checking which cluster it is set to.</p>
-          <button class="btn btn-primary btn-full" style="margin-top:1.25rem;" disabled>Create a goal (available after the program is deployed)</button>
+
+          <!-- Checking which state applies -->
+          <div id="goalsLoading">
+            <p class="pane-note">Checking the Sela program&hellip;</p>
+          </div>
+
+          <!-- No wallet connected -->
+          <div id="goalsNeedWallet" style="display:none;">
+            <div class="card-header"><span class="panel-title">Shared savings goal</span></div>
+            <p class="pane-note" style="margin-bottom:1.25rem;">Connect a wallet to create or view a shared goal.</p>
+            <button class="btn btn-primary btn-full" onclick="handleConnectWallet()">Connect Wallet</button>
+          </div>
+
+          <!-- No local goal yet: one primary action -->
+          <div id="goalsEmpty" style="display:none;">
+            <div class="card-header"><span class="panel-title">Shared savings goal</span></div>
+            <p class="pane-note" style="margin-bottom:1.25rem;">Create a goal, register a passkey for approvals, and start contributing in USDC.</p>
+            <button class="btn btn-primary btn-full" onclick="GoalsTab.showGoalCreateForm()">Create a Goal</button>
+          </div>
+
+          <!-- Create-goal form -->
+          <div id="goalsCreateForm" style="display:none;">
+            <div class="card-header"><span class="panel-title">Create a shared goal</span></div>
+            <div class="form-group">
+              <label class="form-label">Goal name</label>
+              <input type="text" id="goalName" class="form-input" placeholder="Family trip fund" maxlength="32">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Target amount (USDC)</label>
+              <input type="number" id="goalTarget" class="form-input" placeholder="500" min="1" step="0.01">
+            </div>
+            <p class="pane-note" style="margin-bottom:1.25rem;">Creating a goal registers a passkey on this device for approving contributions and withdrawals. Your browser will prompt you.</p>
+            <button class="btn btn-primary btn-full" id="goalCreateBtn" onclick="GoalsTab.handleCreateGoal()">Create Goal</button>
+            <button class="btn btn-ghost btn-full" style="margin-top:0.5rem;" onclick="GoalsTab.hideGoalCreateForm()">Cancel</button>
+          </div>
+
+          <!-- Active goal: real on-chain balance, one primary action (Contribute), Withdraw is secondary -->
+          <div id="goalsActive" style="display:none;">
+            <div class="card-header"><span class="panel-title" id="goalActiveName">Goal</span></div>
+            <div style="text-align:center;padding:1.5rem 0;border-bottom:1px solid var(--border);margin-bottom:1.25rem;">
+              <div class="stat-value accent" id="goalCurrentAmount" style="font-size:var(--text-lg);">Loading&hellip;</div>
+              <div class="pane-note" style="margin-top:0.25rem;">of <span id="goalTargetAmount">-</span> USDC target</div>
+            </div>
+            <button class="btn btn-primary btn-full" onclick="GoalsTab.showGoalContributeForm()">Contribute</button>
+            <button class="btn btn-ghost btn-full" style="margin-top:0.5rem;" onclick="GoalsTab.showGoalWithdrawForm()">Withdraw</button>
+          </div>
+
+          <!-- Contribute form -->
+          <div id="goalsContributeForm" style="display:none;">
+            <div class="card-header"><span class="panel-title">Contribute</span></div>
+            <div class="form-group">
+              <label class="form-label">Amount (USDC)</label>
+              <input type="number" id="contributeAmount" class="form-input" placeholder="25" min="0.01" step="0.01">
+            </div>
+            <p class="pane-note" style="margin-bottom:1.25rem;">Approved with your passkey. Your browser will prompt you.</p>
+            <button class="btn btn-primary btn-full" id="goalContributeBtn" onclick="GoalsTab.handleContribute()">Approve &amp; Contribute</button>
+            <button class="btn btn-ghost btn-full" style="margin-top:0.5rem;" onclick="GoalsTab.hideGoalForms()">Cancel</button>
+          </div>
+
+          <!-- Withdraw form -->
+          <div id="goalsWithdrawForm" style="display:none;">
+            <div class="card-header"><span class="panel-title">Withdraw</span></div>
+            <div class="form-group">
+              <label class="form-label">Amount (USDC)</label>
+              <input type="number" id="withdrawAmount" class="form-input" placeholder="25" min="0.01" step="0.01">
+            </div>
+            <p class="pane-note" style="margin-bottom:1.25rem;">Approved with your passkey. Your browser will prompt you.</p>
+            <button class="btn btn-primary btn-full" id="goalWithdrawBtn" onclick="GoalsTab.handleWithdraw()">Approve &amp; Withdraw</button>
+            <button class="btn btn-ghost btn-full" style="margin-top:0.5rem;" onclick="GoalsTab.hideGoalForms()">Cancel</button>
+          </div>
+
         </div>
       </div>
 
@@ -800,9 +870,12 @@
   <script src="wallet-adapter.js"></script>
   <script src="sela-config.js"></script>
   <script src="payment-transfer.js"></script>
+  <script src="program-client.js"></script>
+  <script src="passkey-client.js"></script>
   <script src="smart-tx.js"></script>
   <script src="veil-engine.js"></script>
   <script src="app.js"></script>
+  <script src="goals-tab.js"></script>
   <script src="swap.js"></script>
   <script>
     // Cluster badge, read from the one config file so nobody is misled
@@ -1009,6 +1082,7 @@
       }
 
       VeilOnboarding.check();
+      try { window.dispatchEvent(new CustomEvent('sela:wallet-connected', { detail: { publicKey: wallet.publicKey } })); } catch (e) {}
     }
 
     async function handleGenerateInvoice() {

@@ -78,6 +78,17 @@ const CognataProgram = (() => {
     return buf;
   }
 
+  function _i64LE(n) {
+    const big = typeof n === 'bigint' ? n : BigInt(Math.trunc(n));
+    const buf = new Uint8Array(8);
+    new DataView(buf.buffer).setBigInt64(0, big, true);
+    return buf;
+  }
+
+  function _string(str) {
+    return _vecU8(new TextEncoder().encode(str));
+  }
+
   function _vecU8(bytes) {
     const body = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
     const out = new Uint8Array(4 + body.length);
@@ -181,35 +192,38 @@ const CognataProgram = (() => {
   }
 
   /**
-   * Builds the `contribute` instruction. Account order and every
-   * PDA/ATA derivation here must match instructions/contribute.rs
-   * exactly, Anchor account resolution is strictly positional.
-   *
-   * `authenticatorData` / `clientDataJson` are raw bytes from a
-   * WebAuthn assertion, see passkey-client.js for how those and the
-   * accompanying secp256r1 precompile instruction are produced,
-   * that precompile instruction MUST be placed immediately before
-   * this one in the transaction (or anywhere earlier, but simplest as
-   * directly before).
+   * Passkey-gated instructions (contribute, withdraw) can't be built
+   * in one pass: the challenge WebAuthn signs is a hash over this
+   * same instruction's account list and fixed-size argument prefix
+   * (see passkey.rs hash_authorized_action), which has to exist
+   * BEFORE authenticator_data/client_data_json do, and those are only
+   * produced BY the WebAuthn call the challenge feeds into. So every
+   * one of these instructions is built in two phases:
+   *   1. a "challenge material" function, program_id + keys + the
+   *      fixed prefix bytes, everything the challenge hash needs and
+   *      nothing that depends on it
+   *   2. a "finalize" function that takes that same material plus the
+   *      real authenticator_data/client_data_json (from
+   *      passkey-client.js, which is what actually calls part 1, then
+   *      WebAuthn, then part 2) and returns the real instruction
+   * passkey-client.js is what drives this, not code that calls these
+   * directly.
    */
-  function buildContributeInstruction({
+
+  function _contributeChallengeMaterial({
     payer, vaultPda, goalPda, goalTokenAccount, mint,
     contributorTokenAccount, deviceRole, amountBaseUnits, decimals,
-    authenticatorData, clientDataJson,
   }) {
-    const web3 = _web3();
     const { pda: feeConfigPda } = deriveFeeConfigPda();
     const { pda: treasuryPda } = deriveTreasuryPda();
     const feeDestination = getAssociatedTokenAddress(treasuryPda, mint);
     const { pda: walletAuthorityPda } = deriveWalletAuthorityPda(vaultPda, deviceRole);
 
-    const data = _concat([
+    const prefix = _concat([
       new Uint8Array(DISCRIMINATORS.contribute),
       _u8(deviceRole),
       _u64LE(amountBaseUnits),
       _u8(decimals),
-      _vecU8(authenticatorData),
-      _vecU8(clientDataJson),
     ]);
 
     const keys = [
@@ -227,28 +241,31 @@ const CognataProgram = (() => {
       _meta(TOKEN_PROGRAM_ID, false, false),
     ];
 
-    return new web3.TransactionInstruction({ programId: new web3.PublicKey(PROGRAM_ID), keys, data });
+    return { programId: PROGRAM_ID, keys, prefix };
   }
 
-  /**
-   * Builds the `withdraw` instruction. Same passkey-proof shape as
-   * contribute (business_data_len=10: device_role + amount + decimals),
-   * different, smaller account list, see instructions/withdraw.rs.
-   */
-  function buildWithdrawInstruction({
+  function _finalizePasskeyInstruction({ programId, keys, prefix, authenticatorData, clientDataJson }) {
+    const web3 = _web3();
+    const data = _concat([prefix, _vecU8(authenticatorData), _vecU8(clientDataJson)]);
+    return new web3.TransactionInstruction({ programId: new web3.PublicKey(programId), keys, data });
+  }
+
+  /** Full one-shot builder, used only when authenticatorData/clientDataJson
+   * are already in hand (e.g. re-assembling for a retry). Normal flow
+   * goes through passkey-client.js's two-phase orchestration instead. */
+  function buildContributeInstruction(args) {
+    return _finalizePasskeyInstruction({ ..._contributeChallengeMaterial(args), ...args });
+  }
+
+  function _withdrawChallengeMaterial({
     payer, vaultPda, goalPda, goalTokenAccount, mint,
     destinationTokenAccount, deviceRole, amountBaseUnits, decimals,
-    authenticatorData, clientDataJson,
   }) {
-    const web3 = _web3();
-
-    const data = _concat([
+    const prefix = _concat([
       new Uint8Array(DISCRIMINATORS.withdraw),
       _u8(deviceRole),
       _u64LE(amountBaseUnits),
       _u8(decimals),
-      _vecU8(authenticatorData),
-      _vecU8(clientDataJson),
     ]);
 
     const keys = [
@@ -262,7 +279,11 @@ const CognataProgram = (() => {
       _meta(TOKEN_PROGRAM_ID, false, false),
     ];
 
-    return new web3.TransactionInstruction({ programId: new web3.PublicKey(PROGRAM_ID), keys, data });
+    return { programId: PROGRAM_ID, keys, prefix };
+  }
+
+  function buildWithdrawInstruction(args) {
+    return _finalizePasskeyInstruction({ ..._withdrawChallengeMaterial(args), ...args });
   }
 
   /**
@@ -308,6 +329,145 @@ const CognataProgram = (() => {
     return new web3.TransactionInstruction({ programId: new web3.PublicKey(PROGRAM_ID), keys, data });
   }
 
+  /**
+   * Builds `init_family_vault`. Not passkey-gated, backend_authority
+   * is just the connected wallet (see init_family_vault.rs doc
+   * comment: vault creation happens before any device is registered,
+   * so there is nothing yet to check a passkey signature against).
+   * `primaryDeviceCompressedPubkey` is the 33-byte compressed P-256
+   * key from registering a passkey, see passkey-client.js
+   * registerPasskey(). `partnerDeviceCompressedPubkey` may be null
+   * for a single-contributor goal, a placeholder all-zero key is used
+   * (device_role 1 simply can never match it, so it can never
+   * authorize anything, matches the program's UnauthorizedContributor
+   * check on any other value).
+   */
+  function buildInitFamilyVaultInstruction({
+    payer, vaultSeedPubkey, primaryDeviceCompressedPubkey, partnerDeviceCompressedPubkey,
+    guardianPubkey, feeTier,
+  }) {
+    const web3 = _web3();
+    const { pda: vaultPda } = deriveVaultPda(vaultSeedPubkey);
+    const partnerDevice = partnerDeviceCompressedPubkey || new Uint8Array(33);
+    const guardian = guardianPubkey || payer;
+
+    const data = _concat([
+      new Uint8Array(DISCRIMINATORS.init_family_vault),
+      new web3.PublicKey(vaultSeedPubkey).toBuffer(),
+      new Uint8Array(primaryDeviceCompressedPubkey),
+      new Uint8Array(partnerDevice),
+      new web3.PublicKey(guardian).toBuffer(),
+      _u8(feeTier ?? 0),
+    ]);
+
+    const keys = [
+      _meta(payer, true, true),
+      _meta(vaultPda, false, true),
+      _meta(web3.SystemProgram.programId, false, false),
+    ];
+
+    return { instruction: new web3.TransactionInstruction({ programId: new web3.PublicKey(PROGRAM_ID), keys, data }), vaultPda };
+  }
+
+  /**
+   * Builds `init_savings_goal`. Caller must be vault.creator (the
+   * wallet that called init_family_vault), enforced on-chain. Not
+   * passkey-gated either, adding the shared goal to a vault you
+   * created is an ordinary wallet action, contributing to and
+   * withdrawing from it afterward are what need a passkey.
+   * `goalSeq` must be the vault's CURRENT goal_seq (read the vault
+   * account first), needed client-side to derive the goal PDA.
+   */
+  function buildInitSavingsGoalInstruction({
+    payer, vaultPda, goalSeq, mint, name, targetAmountBaseUnits, currency, deadlineUnixSeconds,
+  }) {
+    const web3 = _web3();
+    const { pda: goalPda } = deriveGoalPda(vaultPda, goalSeq);
+    const goalTokenAccount = getAssociatedTokenAddress(goalPda, mint);
+    const ASSOCIATED_TOKEN_PROGRAM_ID = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL';
+
+    const data = _concat([
+      new Uint8Array(DISCRIMINATORS.init_savings_goal),
+      _string(name),
+      _u64LE(targetAmountBaseUnits),
+      _u8(currency ?? 1),
+      _i64LE(deadlineUnixSeconds),
+    ]);
+
+    const keys = [
+      _meta(payer, true, true),
+      _meta(vaultPda, false, true),
+      _meta(goalPda, false, true),
+      _meta(goalTokenAccount, false, true),
+      _meta(mint, false, false),
+      _meta(TOKEN_PROGRAM_ID, false, false),
+      _meta(ASSOCIATED_TOKEN_PROGRAM_ID, false, false),
+      _meta(web3.SystemProgram.programId, false, false),
+    ];
+
+    return { instruction: new web3.TransactionInstruction({ programId: new web3.PublicKey(PROGRAM_ID), keys, data }), goalPda, goalTokenAccount };
+  }
+
+  // ---- Account decoders. Browser-side (DataView/TextDecoder, no
+  // Node Buffer), field order copied verbatim from state.rs. `data`
+  // is the raw account bytes as returned by getAccountInfo (base64
+  // decoded to a Uint8Array first). Used to read real on-chain state
+  // for display, never to compute anything that gets signed. ----
+
+  function decodeFamilyVault(data) {
+    const d = data instanceof Uint8Array ? data : new Uint8Array(data);
+    const dv = new DataView(d.buffer, d.byteOffset, d.byteLength);
+    let o = 8;
+    const vaultAuthority = d.slice(o, o + 32); o += 32;
+    const vaultSeed = d.slice(o, o + 32); o += 32;
+    const primaryContributorDevice = d.slice(o, o + 33); o += 33;
+    const partnerDevice = d.slice(o, o + 33); o += 33;
+    const guardian = d.slice(o, o + 32); o += 32;
+    const feeTier = d[o]; o += 1;
+    const goalSeq = dv.getUint32(o, true); o += 4;
+    const bump = d[o]; o += 1;
+    const createdAt = dv.getBigInt64(o, true); o += 8;
+    const creator = d.slice(o, o + 32); o += 32;
+    return {
+      vaultAuthority: new (_web3().PublicKey)(vaultAuthority),
+      vaultSeed: new (_web3().PublicKey)(vaultSeed),
+      primaryContributorDevice, partnerDevice,
+      guardian: new (_web3().PublicKey)(guardian),
+      feeTier, goalSeq, bump, createdAt,
+      creator: new (_web3().PublicKey)(creator),
+    };
+  }
+
+  const GOAL_STATUS = { 0: 'Active', 1: 'Completed', 2: 'Withdrawn' };
+  const CURRENCY = { 0: 'Sol', 1: 'Usdc' };
+
+  function decodeSavingsGoal(data) {
+    const d = data instanceof Uint8Array ? data : new Uint8Array(data);
+    const dv = new DataView(d.buffer, d.byteOffset, d.byteLength);
+    let o = 8;
+    const vault = d.slice(o, o + 32); o += 32;
+    const goalSeq = dv.getUint32(o, true); o += 4;
+    const nameBytes = d.slice(o, o + 32); o += 32;
+    const targetAmount = dv.getBigUint64(o, true); o += 8;
+    const currentAmount = dv.getBigUint64(o, true); o += 8;
+    const currency = CURRENCY[d[o]] || 'Unknown'; o += 1;
+    const deadline = dv.getBigInt64(o, true); o += 8;
+    const status = GOAL_STATUS[d[o]] || 'Unknown'; o += 1;
+    const mint = d.slice(o, o + 32); o += 32;
+    const goalTokenAccount = d.slice(o, o + 32); o += 32;
+    const bump = d[o]; o += 1;
+    const createdAt = dv.getBigInt64(o, true); o += 8;
+    const nullIdx = nameBytes.indexOf(0);
+    const name = new TextDecoder().decode(nameBytes.slice(0, nullIdx === -1 ? 32 : nullIdx));
+    return {
+      vault: new (_web3().PublicKey)(vault), goalSeq, name,
+      targetAmount, currentAmount, currency, deadline, status,
+      mint: new (_web3().PublicKey)(mint),
+      goalTokenAccount: new (_web3().PublicKey)(goalTokenAccount),
+      bump, createdAt,
+    };
+  }
+
   return {
     PROGRAM_ID,
     deriveVaultPda,
@@ -320,6 +480,14 @@ const CognataProgram = (() => {
     buildContributeInstruction,
     buildWithdrawInstruction,
     buildExecuteRecurringContributionInstruction,
+    buildInitFamilyVaultInstruction,
+    buildInitSavingsGoalInstruction,
+    decodeFamilyVault,
+    decodeSavingsGoal,
+    // Exposed for passkey-client.js's two-phase orchestration.
+    _contributeChallengeMaterial,
+    _withdrawChallengeMaterial,
+    _finalizePasskeyInstruction,
   };
 })();
 

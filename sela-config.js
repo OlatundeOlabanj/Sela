@@ -25,6 +25,13 @@ const SELA_CONFIG = {
   PROGRAM_ID: 'EPqdJo6sJP9R3RCKh2RFLMt7T6orrkjV1ub584dcM2Vr',
   FEE_MODE: 'wallet',
   FEE_WALLET: 'CjFuX951H7xEoLD3Gzbht5pqK7baoGZ6q32SfUQxNdWS',
+  // The mint goals/allowances are denominated in, on PROGRAM_CLUSTER.
+  // Devnet value matches scripts/constants.ts DEVNET_USDC_MINT (a
+  // devnet test-USDC mint, not real Circle USDC). Update to
+  // EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v once
+  // PROGRAM_CLUSTER moves to mainnet-beta, see DEPLOY.md.
+  GOAL_MINT: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+  GOAL_MINT_DECIMALS: 6,
 };
 
 // Browser: window.SELA_CONFIG. Netlify Functions (Node): require('../../sela-config.js').

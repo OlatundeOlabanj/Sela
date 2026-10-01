@@ -215,21 +215,33 @@ const VeilEngine = (() => {
     }
   }
 
-  async function executePrivatePayment({ paymentId, payerWallet, recipientWallet, amount, onProgress }) {
+  /**
+   * Shared dual-send/retry/safety core, extracted from what was
+   * executePrivatePayment's body so contributeToGoal/withdrawFromGoal
+   * (and anything after them) go through the exact same landing
+   * guarantees as invoicing, not a second, divergent copy of this
+   * logic. `buildTransaction({ tipLamports, tipAccount })` is called
+   * fresh on every attempt and must return a plain, unsigned
+   * web3.Transaction (no blockhash/feePayer set yet, this function
+   * sets both). For a payment, that means rebuilding with a fresh,
+   * possibly-escalated tip each retry, same as before. For a goal
+   * instruction, it means wrapping the SAME already-authorized
+   * instructions in a new Transaction object each time, cheap, and
+   * critically, it does NOT require a fresh passkey touch per retry,
+   * see contributeToGoal's comment on why that's sound.
+   */
+  async function _signAndSubmitWithRetry({ payerWallet, buildTransaction, onProgress }) {
     const activeProvider = _getActiveProvider();
     if (!activeProvider) throw new Error('Wallet not connected.');
 
-    onProgress?.('depositing'); // reuse the first step while we check
-    await _checkSolBalance(payerWallet);
-    await _checkUsdcBalance(payerWallet, amount);
-
     // Start at HIGH (p75 landed-tip), not MEDIUM (p50). p50 means half of
     // recently landed bundles needed MORE than this to land. A coin flip
-    // isn't good enough for a payment. The tip itself is fractions of a
-    // cent; the cost of losing another real test payment is not.
+    // isn't good enough for a real transfer. The tip itself is fractions
+    // of a cent; the cost of losing another real test payment is not.
     let urgency = 'HIGH';
     let attempt = 0;
     let lastError = null;
+    let lastMeta = {};
 
     while (attempt <= MAX_RETRIES) {
       attempt++;
@@ -238,9 +250,8 @@ const VeilEngine = (() => {
       const { tipLamports, tipAccount } = await SmartTX.getTip(urgency);
       const { blockhash } = await _rpc('getLatestBlockhash', [{ commitment: 'confirmed' }]).then(r => r.value ?? r);
 
-      const { transaction, feeBaseUnits } = await PaymentTransfer.buildPaymentTransaction({
-        payerWallet, recipientWallet, amount, tipLamports, tipAccount,
-      });
+      const { transaction, ...meta } = await buildTransaction({ tipLamports, tipAccount });
+      lastMeta = meta;
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = new window.solanaWeb3.PublicKey(payerWallet);
 
@@ -265,14 +276,9 @@ const VeilEngine = (() => {
       const outcome = await _waitForConfirmation(signature);
       if (outcome.confirmed) {
         return {
-          txHash: signature,
-          status: 'confirmed',
-          success: true,
-          simulated: false,
-          feeBaseUnits,
-          tipLamports,
-          usedFallback: submission.usedFallback || false,
-          explorerUrl: `https://solscan.io/tx/${signature}`,
+          txHash: signature, status: 'confirmed', success: true, simulated: false,
+          tipLamports, usedFallback: submission.usedFallback || false,
+          explorerUrl: `https://solscan.io/tx/${signature}`, ...lastMeta,
         };
       }
 
@@ -295,18 +301,13 @@ const VeilEngine = (() => {
       const safety = await _waitForSafeRetry(signature, blockhash);
       if (safety.landedLate) {
         return {
-          txHash: signature,
-          status: 'confirmed',
-          success: true,
-          simulated: false,
-          feeBaseUnits,
-          tipLamports,
-          usedFallback: submission.usedFallback || false,
-          explorerUrl: `https://solscan.io/tx/${signature}`,
+          txHash: signature, status: 'confirmed', success: true, simulated: false,
+          tipLamports, usedFallback: submission.usedFallback || false,
+          explorerUrl: `https://solscan.io/tx/${signature}`, ...lastMeta,
         };
       }
       if (!safety.safeToRetry) {
-        throw new Error('Payment status is unclear. Please check your wallet history before trying again to avoid a double payment.');
+        throw new Error('Transaction status is unclear. Please check your wallet history before trying again to avoid a duplicate.');
       }
 
       lastError = 'Confirmation timed out';
@@ -318,7 +319,141 @@ const VeilEngine = (() => {
       throw new Error(lastError);
     }
 
-    throw new Error(lastError || 'Payment failed after retries.');
+    throw new Error(lastError || 'Transaction failed after retries.');
+  }
+
+  async function executePrivatePayment({ paymentId, payerWallet, recipientWallet, amount, onProgress }) {
+    await _checkSolBalance(payerWallet);
+    await _checkUsdcBalance(payerWallet, amount);
+
+    return _signAndSubmitWithRetry({
+      payerWallet,
+      onProgress,
+      buildTransaction: async ({ tipLamports, tipAccount }) => {
+        const { transaction, feeBaseUnits } = await PaymentTransfer.buildPaymentTransaction({
+          payerWallet, recipientWallet, amount, tipLamports, tipAccount,
+        });
+        return { transaction, feeBaseUnits };
+      },
+    });
+  }
+
+  /**
+   * Contributes to a shared savings goal, passkey-approved. The
+   * passkey assertion (PasskeyClient.authorizePasskeyInstruction) is
+   * obtained ONCE, before any retry attempt, not re-requested per
+   * retry. This is intentional, not a shortcut: the WebAuthn challenge
+   * only commits to the instruction's accounts and fixed arguments
+   * (see passkey.rs hash_authorized_action), never to the blockhash,
+   * so the same signed assertion is valid no matter how many times
+   * the surrounding transaction gets rebuilt with a fresh blockhash on
+   * retry. Asking the user to touch their device again on every retry
+   * would be worse UX for no security benefit.
+   *
+   * No tip instruction is bundled into the transaction (unlike
+   * executePrivatePayment). A tip transfer is itself an instruction,
+   * and hash_authorized_action hashes every non-precompile
+   * instruction's full bytes into the challenge, including its
+   * position relative to the business instruction. Supporting that
+   * correctly means the challenge computation and the final
+   * transaction assembly have to agree on instruction order down to
+   * the byte, which passkey-client.js does not attempt yet. Landing
+   * still goes through the real dual-send (Jito bundle + RPC
+   * concurrently via submit-bundle.js), just without a priority tip
+   * on top.
+   */
+  async function contributeToGoal({
+    payerWallet, vaultPda, goalPda, goalTokenAccount, mint, contributorTokenAccount,
+    deviceRole, amountBaseUnits, decimals, credentialId, compressedPubkey33, onProgress,
+  }) {
+    onProgress?.('depositing');
+    const { precompileIx, businessIx } = await window.PasskeyClient.authorizePasskeyInstruction({
+      kind: 'contribute',
+      args: {
+        payer: payerWallet, vaultPda, goalPda, goalTokenAccount, mint,
+        contributorTokenAccount, deviceRole, amountBaseUnits, decimals,
+      },
+      credentialId,
+      compressedPubkey33,
+    });
+
+    return _signAndSubmitWithRetry({
+      payerWallet,
+      onProgress,
+      buildTransaction: async () => {
+        const web3 = window.solanaWeb3;
+        const transaction = new web3.Transaction().add(precompileIx).add(businessIx);
+        return { transaction, amountBaseUnits };
+      },
+    });
+  }
+
+  /** Symmetric to contributeToGoal, see its comment for the passkey
+   * and no-tip design notes, both apply here unchanged. */
+  async function withdrawFromGoal({
+    payerWallet, vaultPda, goalPda, goalTokenAccount, mint, destinationTokenAccount,
+    deviceRole, amountBaseUnits, decimals, credentialId, compressedPubkey33, onProgress,
+  }) {
+    onProgress?.('depositing');
+    const { precompileIx, businessIx } = await window.PasskeyClient.authorizePasskeyInstruction({
+      kind: 'withdraw',
+      args: {
+        payer: payerWallet, vaultPda, goalPda, goalTokenAccount, mint,
+        destinationTokenAccount, deviceRole, amountBaseUnits, decimals,
+      },
+      credentialId,
+      compressedPubkey33,
+    });
+
+    return _signAndSubmitWithRetry({
+      payerWallet,
+      onProgress,
+      buildTransaction: async () => {
+        const web3 = window.solanaWeb3;
+        const transaction = new web3.Transaction().add(precompileIx).add(businessIx);
+        return { transaction, amountBaseUnits };
+      },
+    });
+  }
+
+  /**
+   * Creates a vault and its first shared goal in one atomic
+   * transaction (init_family_vault, then init_savings_goal, both
+   * signed by the connected wallet). Not passkey-gated, see both
+   * instructions' Rust doc comments, vault/goal creation is an
+   * ordinary wallet action; contributing to and withdrawing from the
+   * goal afterward are what need a passkey. `primaryDeviceCompressedPubkey`
+   * must come from PasskeyClient.registerPasskey(), called before
+   * this, since device_role 0 is checked against it on every future
+   * contribute/withdraw.
+   */
+  async function createGoal({
+    payerWallet, primaryDeviceCompressedPubkey, guardianPubkey, feeTier,
+    name, targetAmountBaseUnits, currency, deadlineUnixSeconds, mint, onProgress,
+  }) {
+    const web3 = window.solanaWeb3;
+    const CP = window.CognataProgram;
+    const vaultSeed = web3.Keypair.generate().publicKey;
+
+    const result = await _signAndSubmitWithRetry({
+      payerWallet,
+      onProgress,
+      buildTransaction: async () => {
+        const { instruction: vaultIx, vaultPda } = CP.buildInitFamilyVaultInstruction({
+          payer: payerWallet, vaultSeedPubkey: vaultSeed,
+          primaryDeviceCompressedPubkey, partnerDeviceCompressedPubkey: null,
+          guardianPubkey, feeTier,
+        });
+        const { instruction: goalIx, goalPda, goalTokenAccount } = CP.buildInitSavingsGoalInstruction({
+          payer: payerWallet, vaultPda, goalSeq: 0, mint, name,
+          targetAmountBaseUnits, currency, deadlineUnixSeconds,
+        });
+        const transaction = new web3.Transaction().add(vaultIx).add(goalIx);
+        return { transaction, vaultPda: vaultPda.toBase58(), goalPda: goalPda.toBase58(), goalTokenAccount: goalTokenAccount.toBase58() };
+      },
+    });
+
+    return result;
   }
 
   return {
@@ -326,6 +461,9 @@ const VeilEngine = (() => {
     connectWallet,
     createPrivatePayment,
     executePrivatePayment,
+    createGoal,
+    contributeToGoal,
+    withdrawFromGoal,
     get isSimulated() { return false; },
     get activeWalletName() { return _activeWalletName; },
   };
