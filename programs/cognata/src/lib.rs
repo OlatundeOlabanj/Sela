@@ -18,7 +18,7 @@ use state::{Currency, FeeTier, Frequency};
 // TODO: replace with the real deployed program ID once `anchor keys sync`
 // (or `solana address -k target/deploy/cognata-keypair.json`) has
 // been run on your machine, this placeholder will not deploy correctly.
-declare_id!("6apQZUxBwpBbFNiBpYzGeMBQJ8328xrrsQ3aRcQhM2Av");
+declare_id!("EPqdJo6sJP9R3RCKh2RFLMt7T6orrkjV1ub584dcM2Vr");
 
 #[program]
 pub mod cognata {
