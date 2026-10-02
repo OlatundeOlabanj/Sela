@@ -90,7 +90,7 @@
   },
 
   "dbcPool": {
-    "creator": "REPLACE_WITH_YOUR_OWN_DEVNET_WALLET", // must be Tunde's connected wallet pubkey, a PDA cannot sign pool creation (run `solana address`)
+    "creator": "F7BHT2uEbyf6d5abLUmyL7NB8YZ8VcXhkzRw5DSNZG6J", // Tunde's devnet wallet
     "name": "GOAL_TOKEN_NAME",
     "symbol": "GOALSYM",
     "metadata": {
