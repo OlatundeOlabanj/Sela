@@ -1,22 +1,40 @@
 /**
- * Goals tab controller. Wires the Goals pane in dashboard.html to
- * program-client.js (instruction building + account decoding),
- * passkey-client.js (WebAuthn) and veil-engine.js (dual-send
- * submission). Knows nothing about invoicing or swap, those stay in
- * app.js/swap.js.
+ * Goals + Home dashboard controller.
  *
- * State for "which goal is mine" (vault/goal addresses, which
- * passkey credential to use) is kept in localStorage, per connected
- * wallet, this is just a pointer, never the balance. Every number
- * shown on screen is read fresh from the chain, see refreshBalance().
+ * Data model: localStorage keeps exactly one thing per wallet, which
+ * vault is theirs (vaultPda, the registered passkey credential and
+ * device pubkey). It is a pointer, never a balance. Which goals exist
+ * is read from the chain every time: fetch the vault, read its
+ * goal_seq (a count), derive and fetch each goal PDA 0..goal_seq-1.
+ * Every amount shown anywhere in this file comes from a decoded
+ * on-chain account at render time.
+ *
+ * The one local log this file keeps is activity (contribute/withdraw
+ * events, timestamp + amount), written the moment this UI confirms
+ * one, nothing else. That log is what the weekly bar chart and the
+ * Home activity preview are built from, merged with real invoice
+ * payment history from Cognata.getAllInvoices(). A day with nothing
+ * logged renders as a zero bar, not an invented number. There is no
+ * historical backfill, a fresh deploy's activity log starts empty and
+ * only grows from real confirmed actions, which is the honest state
+ * for a product with no activity yet, not a bug.
+ *
+ * No balance-over-time series exists anywhere (no snapshot log, no
+ * history endpoint), so there is no sparkline and no week-over-week
+ * percentage here. Faking either would be exactly the thing this
+ * project's rules forbid. See the chat report for the flag back to
+ * Tunde on whether to build that data source.
  *
  * Made by TJS Code
  */
 
 const GoalsTab = (() => {
-  const STORAGE_PREFIX = 'sela_goal_pointer_';
+  const VAULT_PREFIX = 'sela_vault_pointer_';
+  const ACTIVITY_PREFIX = 'sela_activity_log_';
+  const MAX_GOALS_TO_SCAN = 12; // sane ceiling on how many goal_seq slots to fetch
   let initialized = false;
   let connectionCache = null;
+  let selectedGoal = null; // the goal currently open in the detail/contribute/withdraw forms
 
   function _web3() { return window.solanaWeb3; }
 
@@ -28,37 +46,39 @@ const GoalsTab = (() => {
     return connectionCache;
   }
 
-  function _bytesToB64(bytes) {
-    let bin = ''; for (const b of bytes) bin += String.fromCharCode(b); return btoa(bin);
-  }
-  function _b64ToBytes(b64) {
-    const bin = atob(b64); const out = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-    return out;
+  function _bytesToB64(bytes) { let bin = ''; for (const b of bytes) bin += String.fromCharCode(b); return btoa(bin); }
+  function _b64ToBytes(b64) { const bin = atob(b64); const out = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i); return out; }
+  function _decimals() { return window.SELA_CONFIG.GOAL_MINT_DECIMALS; }
+  function _fmt(baseUnits) {
+    return (Number(baseUnits) / 10 ** _decimals()).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
-  function _formatAmount(baseUnits, decimals) {
-    return (Number(baseUnits) / 10 ** decimals).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-
-  function _storePointer(walletPubkey, pointer) {
-    localStorage.setItem(STORAGE_PREFIX + walletPubkey, JSON.stringify(pointer));
-  }
-  function _getPointer(walletPubkey) {
-    const raw = localStorage.getItem(STORAGE_PREFIX + walletPubkey);
+  // ---- Vault pointer (one per wallet) ----
+  function _getVaultPointer(wallet) {
+    const raw = localStorage.getItem(VAULT_PREFIX + wallet);
     if (!raw) return null;
     try { return JSON.parse(raw); } catch { return null; }
   }
-
-  function _showOnly(id) {
-    ['goalsNotDeployed', 'goalsLoading', 'goalsNeedWallet', 'goalsEmpty', 'goalsCreateForm', 'goalsActive', 'goalsContributeForm', 'goalsWithdrawForm']
-      .forEach((x) => { const el = document.getElementById(x); if (el) el.style.display = x === id ? '' : 'none'; });
+  function _setVaultPointer(wallet, pointer) {
+    localStorage.setItem(VAULT_PREFIX + wallet, JSON.stringify(pointer));
   }
 
+  // ---- Activity log (real, appended to on confirmed actions only) ----
+  function _getActivityLog(wallet) {
+    const raw = localStorage.getItem(ACTIVITY_PREFIX + wallet);
+    if (!raw) return [];
+    try { return JSON.parse(raw); } catch { return []; }
+  }
+  function _logActivity(wallet, entry) {
+    const log = _getActivityLog(wallet);
+    log.push({ ...entry, timestamp: Date.now() });
+    localStorage.setItem(ACTIVITY_PREFIX + wallet, JSON.stringify(log));
+  }
+
+  // ---- Chain reads ----
   async function _programIsDeployed() {
-    const cfg = window.SELA_CONFIG;
     try {
-      const info = await _getConnection().getAccountInfo(new (_web3().PublicKey)(cfg.PROGRAM_ID));
+      const info = await _getConnection().getAccountInfo(new (_web3().PublicKey)(window.SELA_CONFIG.PROGRAM_ID));
       return !!info && info.executable;
     } catch (err) {
       console.error('[Goals] cluster check failed:', err.message);
@@ -66,63 +86,258 @@ const GoalsTab = (() => {
     }
   }
 
-  async function refresh() {
+  /** Real enumeration: reads the vault's goal_seq, fetches every goal
+   * index up to it. No locally-cached list of "which goals exist". */
+  async function _fetchAllGoals(vaultPdaStr) {
+    const conn = _getConnection();
+    const CP = window.CognataProgram;
+    const vaultPda = new (_web3().PublicKey)(vaultPdaStr);
+    const vaultInfo = await conn.getAccountInfo(vaultPda);
+    if (!vaultInfo) return { vault: null, goals: [] };
+    const vault = CP.decodeFamilyVault(vaultInfo.data);
+    const count = Math.min(vault.goalSeq, MAX_GOALS_TO_SCAN);
+    const goals = [];
+    for (let seq = 0; seq < count; seq++) {
+      const { pda: goalPda } = CP.deriveGoalPda(vaultPda, seq);
+      const info = await conn.getAccountInfo(goalPda);
+      if (!info) continue;
+      const goal = CP.decodeSavingsGoal(info.data);
+      goals.push({ ...goal, goalPda: goalPda.toBase58(), goalSeq: seq, vaultPda: vaultPdaStr });
+    }
+    return { vault, goals };
+  }
+
+  // ---- Shared ring renderer (used by both Home and Goals view) ----
+  function _ringSvg(pct, status) {
+    const r = 30, c = 2 * Math.PI * r;
+    const clamped = Math.max(0, Math.min(100, pct));
+    const color = status === 'Completed' || clamped >= 100 ? 'var(--success)' : 'var(--accent)';
+    const offset = c - (clamped / 100) * c;
+    return `
+      <svg class="goal-ring-svg" viewBox="0 0 72 72">
+        <circle cx="36" cy="36" r="${r}" fill="none" stroke="var(--border-light)" stroke-width="6"/>
+        <circle cx="36" cy="36" r="${r}" fill="none" stroke="${color}" stroke-width="6"
+          stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${offset}"
+          transform="rotate(-90 36 36)"/>
+        <text x="36" y="41" text-anchor="middle" class="goal-ring-pct">${Math.round(clamped)}%</text>
+      </svg>`;
+  }
+
+  function _renderRingRow(container, goals, { tappable }) {
+    if (!goals.length) {
+      container.innerHTML = '<div class="goal-ring-empty pane-note">No goals yet.</div>';
+      return;
+    }
+    container.innerHTML = goals.map((g, i) => {
+      const pct = g.targetAmount > 0n ? Number((g.currentAmount * 100n) / g.targetAmount) : 0;
+      return `
+        <div class="goal-ring-card" ${tappable ? `onclick="GoalsTab.openGoalDetail(${i})"` : ''}>
+          ${_ringSvg(pct, g.status)}
+          <div class="goal-ring-name">${_escape(g.name)}</div>
+          <div class="goal-ring-amounts">${_fmt(g.currentAmount)} / ${_fmt(g.targetAmount)}</div>
+        </div>`;
+    }).join('');
+  }
+
+  function _escape(s) { return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+  // ---- Weekly contributions bar chart: real data, calendar week Mon-Sun ----
+  function _computeWeekData(wallet) {
+    const now = new Date();
+    const day = (now.getDay() + 6) % 7; // 0 = Monday
+    const monday = new Date(now); monday.setHours(0, 0, 0, 0); monday.setDate(now.getDate() - day);
+
+    const buckets = [0, 0, 0, 0, 0, 0, 0]; // USDC units, Mon..Sun
+    const decimals = _decimals();
+
+    for (const entry of _getActivityLog(wallet)) {
+      if (entry.type !== 'contribute') continue;
+      const d = new Date(entry.timestamp);
+      const diffDays = Math.floor((d - monday) / 86400000);
+      if (diffDays >= 0 && diffDays < 7) buckets[diffDays] += Number(entry.amountBaseUnits) / 10 ** decimals;
+    }
+    for (const inv of (window.Cognata?.getAllInvoices?.() || [])) {
+      if (inv.status !== 'paid') continue;
+      // No separate "paid at" timestamp exists on an invoice record,
+      // createdAt is the closest real field, used as-is rather than
+      // inventing a field that was never actually recorded.
+      if (!inv.createdAt) continue;
+      const d = new Date(inv.createdAt);
+      const diffDays = Math.floor((d - monday) / 86400000);
+      if (diffDays >= 0 && diffDays < 7) buckets[diffDays] += Number(inv.amount || 0);
+    }
+    return { buckets, todayIndex: day };
+  }
+
+  function _renderWeekChart(wallet) {
+    const { buckets, todayIndex } = _computeWeekData(wallet);
+    const max = Math.max(...buckets, 0.01);
+    const total = buckets.reduce((s, v) => s + v, 0);
+    const labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    const bars = document.getElementById('weekChartBars');
+    if (bars) {
+      bars.innerHTML = buckets.map((v, i) => `
+        <div class="week-bar-col ${i === todayIndex ? 'is-today' : ''}">
+          <div class="week-bar" style="height:${Math.max(3, (v / max) * 100)}%" title="${v.toFixed(2)} USDC"></div>
+          <div class="week-bar-day">${labels[i]}</div>
+        </div>`).join('');
+    }
+    const totalEl = document.getElementById('weekChartTotal');
+    if (totalEl) totalEl.textContent = total.toFixed(2) + ' total';
+  }
+
+  // ---- Recent activity (merged, real) ----
+  function _mergedActivity(wallet, limit) {
+    const items = [];
+    for (const entry of _getActivityLog(wallet)) {
+      items.push({
+        title: entry.type === 'contribute' ? `Contributed to ${entry.goalName}` : `Withdrew from ${entry.goalName}`,
+        sub: _relativeTime(entry.timestamp),
+        amount: Number(entry.amountBaseUnits) / 10 ** _decimals(),
+        direction: entry.type === 'contribute' ? 'out' : 'in', // money leaving the user = out icon, matches the action
+        timestamp: entry.timestamp,
+      });
+    }
+    for (const inv of (window.Cognata?.getAllInvoices?.() || [])) {
+      if (inv.status !== 'paid') continue;
+      // Same createdAt-as-proxy note as _computeWeekData above.
+      const ts = inv.createdAt ? new Date(inv.createdAt).getTime() : 0;
+      items.push({
+        title: `Invoice paid: ${inv.clientName || 'client'}`,
+        sub: _relativeTime(ts),
+        amount: Number(inv.amount || 0),
+        direction: 'in',
+        timestamp: ts,
+      });
+    }
+    items.sort((a, b) => b.timestamp - a.timestamp);
+    return items.slice(0, limit);
+  }
+
+  function _relativeTime(ts) {
+    if (!ts) return '';
+    const diff = Date.now() - ts;
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    return `${Math.floor(hrs / 24)}d ago`;
+  }
+
+  function _renderActivityList(containerId, wallet, limit) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    const items = _mergedActivity(wallet, limit);
+    if (!items.length) { el.innerHTML = '<div class="activity-empty">No activity yet.</div>'; return; }
+    el.innerHTML = items.map((it) => `
+      <div class="activity-row">
+        <span class="activity-icon ${it.direction}">
+          ${it.direction === 'in'
+            ? '<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>'
+            : '<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>'}
+        </span>
+        <div>
+          <div class="activity-row-title">${_escape(it.title)}</div>
+          <div class="activity-row-sub">${_escape(it.sub)}</div>
+        </div>
+        <span class="activity-row-amount ${it.direction}">${it.direction === 'in' ? '+' : ''}${it.amount.toFixed(2)}</span>
+      </div>`).join('');
+  }
+
+  // ---- Home dashboard ----
+  async function renderHome() {
+    const clusterEl = document.getElementById('heroClusterName');
+    if (clusterEl) clusterEl.textContent = window.SELA_CONFIG.PROGRAM_CLUSTER;
+
+    const wallet = window.Cognata?.WalletState?.get();
+    const amountEl = document.getElementById('heroBalanceAmount');
+    const unitEl = document.getElementById('heroBalanceUnit');
+    const connectBtn = document.getElementById('heroConnectBtn');
+
+    if (!wallet?.publicKey) {
+      amountEl.textContent = '-';
+      unitEl.textContent = '';
+      connectBtn.style.display = '';
+      document.getElementById('homeGoalRings').innerHTML = '<div class="pane-note">Connect a wallet to see your goals.</div>';
+      document.getElementById('homeActivityList').innerHTML = '<div class="activity-empty">No activity yet.</div>';
+      _renderWeekChart('');
+      return;
+    }
+    connectBtn.style.display = 'none';
+
+    const pointer = _getVaultPointer(wallet.publicKey);
+    if (!pointer) {
+      amountEl.textContent = '0.00';
+      unitEl.textContent = 'USDC';
+      document.getElementById('homeGoalRings').innerHTML = '<div class="goal-ring-empty pane-note">No goals yet, create one in the Goals tab.</div>';
+    } else {
+      const { goals } = await _fetchAllGoals(pointer.vaultPda);
+      const total = goals.reduce((s, g) => s + g.currentAmount, 0n);
+      amountEl.textContent = _fmt(total);
+      unitEl.textContent = 'USDC';
+      _renderRingRow(document.getElementById('homeGoalRings'), goals, { tappable: false });
+    }
+
+    _renderWeekChart(wallet.publicKey);
+    _renderActivityList('homeActivityList', wallet.publicKey, 5);
+  }
+
+  // ---- Goals view ----
+  let currentGoalsList = [];
+
+  function _showOnly(id) {
+    ['goalsNotDeployed', 'goalsLoading', 'goalsNeedWallet', 'goalsListWrap', 'goalsEmpty', 'goalsCreateForm', 'goalsActive', 'goalsContributeForm', 'goalsWithdrawForm']
+      .forEach((x) => { const el = document.getElementById(x); if (el) el.style.display = x === id ? '' : 'none'; });
+  }
+
+  async function refreshGoalsView() {
+    _showOnly('goalsLoading');
+    const deployed = await _programIsDeployed();
     const clusterNameEl = document.getElementById('goalsClusterName');
     if (clusterNameEl) clusterNameEl.textContent = window.SELA_CONFIG.PROGRAM_CLUSTER;
-
-    _showOnly('goalsLoading');
-
-    const deployed = await _programIsDeployed();
     if (!deployed) { _showOnly('goalsNotDeployed'); return; }
 
     const wallet = window.Cognata?.WalletState?.get();
     if (!wallet?.publicKey) { _showOnly('goalsNeedWallet'); return; }
 
-    const pointer = _getPointer(wallet.publicKey);
+    const pointer = _getVaultPointer(wallet.publicKey);
     if (!pointer) { _showOnly('goalsEmpty'); return; }
 
-    await _showActiveGoal(pointer);
+    const { goals } = await _fetchAllGoals(pointer.vaultPda);
+    currentGoalsList = goals;
+    if (!goals.length) { _showOnly('goalsEmpty'); return; }
+
+    _showOnly('goalsListWrap');
+    _renderRingRow(document.getElementById('goalsRingRow'), goals, { tappable: true });
   }
 
-  async function _showActiveGoal(pointer) {
+  function openGoalDetail(index) {
+    selectedGoal = currentGoalsList[index];
+    if (!selectedGoal) return;
     _showOnly('goalsActive');
-    document.getElementById('goalActiveName').textContent = pointer.name || 'Goal';
-    const currentEl = document.getElementById('goalCurrentAmount');
-    const targetEl = document.getElementById('goalTargetAmount');
-    currentEl.textContent = 'Loading\u2026';
-    currentEl.classList.remove('accent');
-    targetEl.textContent = '-';
-
-    try {
-      const info = await _getConnection().getAccountInfo(new (_web3().PublicKey)(pointer.goalPda));
-      if (!info) { currentEl.textContent = 'Goal not found on chain'; return; }
-      const goal = window.CognataProgram.decodeSavingsGoal(info.data);
-      const decimals = window.SELA_CONFIG.GOAL_MINT_DECIMALS;
-      currentEl.textContent = _formatAmount(goal.currentAmount, decimals) + ' USDC';
-      targetEl.textContent = _formatAmount(goal.targetAmount, decimals);
-      // Amber marks a number worth noticing: any real progress.
-      // A goal that is still at zero gets plain text, nothing to
-      // draw the eye to yet.
-      currentEl.classList.toggle('accent', goal.currentAmount > 0n);
-      if (goal.status !== 'Active') {
-        currentEl.textContent += ` (${goal.status})`;
-      }
-    } catch (err) {
-      currentEl.textContent = 'Could not load balance';
-      console.error('[Goals] balance fetch failed:', err.message);
-    }
+    document.getElementById('goalActiveName').textContent = selectedGoal.name;
+    document.getElementById('goalCurrentAmount').textContent = _fmt(selectedGoal.currentAmount) + ' USDC' + (selectedGoal.status !== 'Active' ? ` (${selectedGoal.status})` : '');
+    document.getElementById('goalCurrentAmount').classList.toggle('accent', selectedGoal.currentAmount > 0n);
+    document.getElementById('goalTargetAmount').textContent = _fmt(selectedGoal.targetAmount);
   }
+
+  function closeGoalDetail() { selectedGoal = null; refreshGoalsView(); }
 
   // ---- Create goal ----
-
-  function showGoalCreateForm() { _showOnly('goalsCreateForm'); }
-  function hideGoalCreateForm() { refresh(); }
+  function showGoalCreateForm() {
+    const wallet = window.Cognata?.WalletState?.get();
+    const hasVault = wallet?.publicKey && _getVaultPointer(wallet.publicKey);
+    document.getElementById('goalCreateNote').textContent = hasVault
+      ? 'Approved with the passkey already registered on this device.'
+      : 'Creating your first goal registers a passkey on this device for approving contributions and withdrawals. Your browser will prompt you.';
+    _showOnly('goalsCreateForm');
+  }
+  function hideGoalCreateForm() { refreshGoalsView(); }
 
   async function handleCreateGoal() {
     const name = document.getElementById('goalName').value.trim();
-    const targetStr = document.getElementById('goalTarget').value.trim();
-    const target = parseFloat(targetStr);
-
+    const target = parseFloat(document.getElementById('goalTarget').value.trim());
     if (!name) return window.Cognata.showToast('Name the goal.', 'red');
     if (!target || target <= 0) return window.Cognata.showToast('Enter a target amount above 0.', 'red');
 
@@ -131,43 +346,59 @@ const GoalsTab = (() => {
 
     const btn = document.getElementById('goalCreateBtn');
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner" style="width:15px;height:15px;"></span> Registering passkey\u2026';
+    const decimals = _decimals();
+    const targetBaseUnits = BigInt(Math.round(target * 10 ** decimals));
+    const existingPointer = _getVaultPointer(wallet.publicKey);
 
     try {
-      const { compressedPubkey, credentialId } = await window.PasskeyClient.registerPasskey({ label: name });
+      if (!existingPointer) {
+        // First goal ever for this wallet: register a passkey and create
+        // both the vault and the goal in one atomic transaction.
+        btn.innerHTML = '<span class="spinner" style="width:15px;height:15px;"></span> Registering passkey\u2026';
+        const { compressedPubkey, credentialId } = await window.PasskeyClient.registerPasskey({ label: name });
 
-      btn.innerHTML = '<span class="spinner" style="width:15px;height:15px;"></span> Creating goal\u2026';
-      const decimals = window.SELA_CONFIG.GOAL_MINT_DECIMALS;
-      const targetBaseUnits = BigInt(Math.round(target * 10 ** decimals));
+        btn.innerHTML = '<span class="spinner" style="width:15px;height:15px;"></span> Creating goal\u2026';
+        const result = await window.VeilEngine.createGoal({
+          payerWallet: wallet.publicKey,
+          primaryDeviceCompressedPubkey: compressedPubkey,
+          guardianPubkey: wallet.publicKey,
+          feeTier: 0,
+          name,
+          targetAmountBaseUnits: targetBaseUnits,
+          currency: 1,
+          deadlineUnixSeconds: 0,
+          mint: window.SELA_CONFIG.GOAL_MINT,
+        });
 
-      const result = await window.VeilEngine.createGoal({
-        payerWallet: wallet.publicKey,
-        primaryDeviceCompressedPubkey: compressedPubkey,
-        guardianPubkey: wallet.publicKey, // v1: creator doubles as guardian unless changed later
-        feeTier: 0, // Standard
-        name,
-        targetAmountBaseUnits: targetBaseUnits,
-        currency: 1, // Usdc
-        deadlineUnixSeconds: 0, // no deadline
-        mint: window.SELA_CONFIG.GOAL_MINT,
-      });
+        window.PasskeyClient.rememberCredentialForVault(result.vaultPda, credentialId);
+        _setVaultPointer(wallet.publicKey, {
+          vaultPda: result.vaultPda,
+          deviceRole: 0,
+          credentialId: _bytesToB64(credentialId),
+          compressedPubkey33: _bytesToB64(compressedPubkey),
+        });
+      } else {
+        // Vault already exists: just add a goal to it, current goal_seq
+        // read fresh from chain, no new passkey needed.
+        btn.innerHTML = '<span class="spinner" style="width:15px;height:15px;"></span> Creating goal\u2026';
+        const conn = _getConnection();
+        const vaultPda = new (_web3().PublicKey)(existingPointer.vaultPda);
+        const vaultInfo = await conn.getAccountInfo(vaultPda);
+        if (!vaultInfo) throw new Error('Vault not found on chain.');
+        const vault = window.CognataProgram.decodeFamilyVault(vaultInfo.data);
 
-      window.PasskeyClient.rememberCredentialForVault(result.vaultPda, credentialId);
-      _storePointer(wallet.publicKey, {
-        vaultPda: result.vaultPda,
-        goalPda: result.goalPda,
-        goalTokenAccount: result.goalTokenAccount,
-        mint: window.SELA_CONFIG.GOAL_MINT,
-        name,
-        credentialId: _bytesToB64(credentialId),
-        compressedPubkey33: _bytesToB64(compressedPubkey),
-        deviceRole: 0,
-      });
+        const { instruction } = window.CognataProgram.buildInitSavingsGoalInstruction({
+          payer: wallet.publicKey, vaultPda, goalSeq: vault.goalSeq, mint: window.SELA_CONFIG.GOAL_MINT,
+          name, targetAmountBaseUnits: targetBaseUnits, currency: 1, deadlineUnixSeconds: 0,
+        });
+        await window.VeilEngine.addGoalToVault({ payerWallet: wallet.publicKey, instruction });
+      }
 
       window.Cognata.showToast('Goal created.', 'green');
       document.getElementById('goalName').value = '';
       document.getElementById('goalTarget').value = '';
-      await refresh();
+      await refreshGoalsView();
+      await renderHome();
     } catch (err) {
       window.Cognata.showToast('Could not create goal: ' + (err.message || 'Unknown error'), 'red');
     }
@@ -175,54 +406,53 @@ const GoalsTab = (() => {
     btn.innerHTML = 'Create Goal';
   }
 
-  // ---- Contribute / withdraw ----
-
+  // ---- Contribute / withdraw (against selectedGoal) ----
   function showGoalContributeForm() { _showOnly('goalsContributeForm'); }
   function showGoalWithdrawForm() { _showOnly('goalsWithdrawForm'); }
-  function hideGoalForms() { refresh(); }
+  function hideGoalForms() { if (selectedGoal) openGoalDetail(currentGoalsList.indexOf(selectedGoal)); else refreshGoalsView(); }
 
   async function _getTokenAccountForWallet(walletPubkey, mint) {
-    return window.CognataProgram.getAssociatedTokenAddress(
-      new (_web3().PublicKey)(walletPubkey),
-      new (_web3().PublicKey)(mint),
-    );
+    return window.CognataProgram.getAssociatedTokenAddress(new (_web3().PublicKey)(walletPubkey), new (_web3().PublicKey)(mint));
   }
 
   async function handleContribute() {
-    const amountStr = document.getElementById('contributeAmount').value.trim();
-    const amount = parseFloat(amountStr);
+    if (!selectedGoal) return window.Cognata.showToast('No goal selected.', 'red');
+    const amount = parseFloat(document.getElementById('contributeAmount').value.trim());
     if (!amount || amount <= 0) return window.Cognata.showToast('Enter an amount above 0.', 'red');
 
     const wallet = window.Cognata.WalletState.get();
-    const pointer = _getPointer(wallet.publicKey);
-    if (!pointer) return window.Cognata.showToast('No goal found for this wallet.', 'red');
+    const pointer = _getVaultPointer(wallet.publicKey);
+    if (!pointer) return window.Cognata.showToast('No vault found for this wallet.', 'red');
 
     const btn = document.getElementById('goalContributeBtn');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner" style="width:15px;height:15px;"></span> Waiting for passkey\u2026';
 
     try {
-      const decimals = window.SELA_CONFIG.GOAL_MINT_DECIMALS;
-      const contributorTokenAccount = await _getTokenAccountForWallet(wallet.publicKey, pointer.mint);
+      const decimals = _decimals();
+      const contributorTokenAccount = await _getTokenAccountForWallet(wallet.publicKey, selectedGoal.mint.toBase58());
+      const amountBaseUnits = BigInt(Math.round(amount * 10 ** decimals));
 
       await window.VeilEngine.contributeToGoal({
         payerWallet: wallet.publicKey,
         vaultPda: pointer.vaultPda,
-        goalPda: pointer.goalPda,
-        goalTokenAccount: pointer.goalTokenAccount,
-        mint: pointer.mint,
+        goalPda: selectedGoal.goalPda,
+        goalTokenAccount: selectedGoal.goalTokenAccount.toBase58(),
+        mint: selectedGoal.mint.toBase58(),
         contributorTokenAccount,
         deviceRole: pointer.deviceRole,
-        amountBaseUnits: BigInt(Math.round(amount * 10 ** decimals)),
-        decimals,
+        amountBaseUnits, decimals,
         credentialId: _b64ToBytes(pointer.credentialId),
         compressedPubkey33: _b64ToBytes(pointer.compressedPubkey33),
         onProgress: (step) => { btn.innerHTML = `<span class="spinner" style="width:15px;height:15px;"></span> ${step === 'transferring' ? 'Submitting\u2026' : 'Building\u2026'}`; },
       });
 
+      _logActivity(wallet.publicKey, { type: 'contribute', goalName: selectedGoal.name, amountBaseUnits: amountBaseUnits.toString() });
       window.Cognata.showToast('Contribution confirmed.', 'green');
       document.getElementById('contributeAmount').value = '';
-      await refresh();
+      await refreshGoalsView();
+      await renderHome();
+      closeGoalDetail();
     } catch (err) {
       window.Cognata.showToast('Contribution failed: ' + (err.message || 'Unknown error'), 'red');
       btn.disabled = false;
@@ -231,40 +461,43 @@ const GoalsTab = (() => {
   }
 
   async function handleWithdraw() {
-    const amountStr = document.getElementById('withdrawAmount').value.trim();
-    const amount = parseFloat(amountStr);
+    if (!selectedGoal) return window.Cognata.showToast('No goal selected.', 'red');
+    const amount = parseFloat(document.getElementById('withdrawAmount').value.trim());
     if (!amount || amount <= 0) return window.Cognata.showToast('Enter an amount above 0.', 'red');
 
     const wallet = window.Cognata.WalletState.get();
-    const pointer = _getPointer(wallet.publicKey);
-    if (!pointer) return window.Cognata.showToast('No goal found for this wallet.', 'red');
+    const pointer = _getVaultPointer(wallet.publicKey);
+    if (!pointer) return window.Cognata.showToast('No vault found for this wallet.', 'red');
 
     const btn = document.getElementById('goalWithdrawBtn');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner" style="width:15px;height:15px;"></span> Waiting for passkey\u2026';
 
     try {
-      const decimals = window.SELA_CONFIG.GOAL_MINT_DECIMALS;
-      const destinationTokenAccount = await _getTokenAccountForWallet(wallet.publicKey, pointer.mint);
+      const decimals = _decimals();
+      const destinationTokenAccount = await _getTokenAccountForWallet(wallet.publicKey, selectedGoal.mint.toBase58());
+      const amountBaseUnits = BigInt(Math.round(amount * 10 ** decimals));
 
       await window.VeilEngine.withdrawFromGoal({
         payerWallet: wallet.publicKey,
         vaultPda: pointer.vaultPda,
-        goalPda: pointer.goalPda,
-        goalTokenAccount: pointer.goalTokenAccount,
-        mint: pointer.mint,
+        goalPda: selectedGoal.goalPda,
+        goalTokenAccount: selectedGoal.goalTokenAccount.toBase58(),
+        mint: selectedGoal.mint.toBase58(),
         destinationTokenAccount,
         deviceRole: pointer.deviceRole,
-        amountBaseUnits: BigInt(Math.round(amount * 10 ** decimals)),
-        decimals,
+        amountBaseUnits, decimals,
         credentialId: _b64ToBytes(pointer.credentialId),
         compressedPubkey33: _b64ToBytes(pointer.compressedPubkey33),
         onProgress: (step) => { btn.innerHTML = `<span class="spinner" style="width:15px;height:15px;"></span> ${step === 'transferring' ? 'Submitting\u2026' : 'Building\u2026'}`; },
       });
 
+      _logActivity(wallet.publicKey, { type: 'withdraw', goalName: selectedGoal.name, amountBaseUnits: amountBaseUnits.toString() });
       window.Cognata.showToast('Withdrawal confirmed.', 'green');
       document.getElementById('withdrawAmount').value = '';
-      await refresh();
+      await refreshGoalsView();
+      await renderHome();
+      closeGoalDetail();
     } catch (err) {
       window.Cognata.showToast('Withdrawal failed: ' + (err.message || 'Unknown error'), 'red');
       btn.disabled = false;
@@ -275,13 +508,17 @@ const GoalsTab = (() => {
   function init() {
     if (initialized) return;
     initialized = true;
-    refresh();
-    window.addEventListener('sela:tab', (e) => { if (e.detail.tab === 'goals') refresh(); });
-    window.addEventListener('sela:wallet-connected', () => refresh());
+    renderHome();
+    refreshGoalsView();
+    window.addEventListener('sela:tab', (e) => {
+      if (e.detail.tab === 'home') renderHome();
+      if (e.detail.tab === 'goals') refreshGoalsView();
+    });
+    window.addEventListener('sela:wallet-connected', () => { renderHome(); refreshGoalsView(); });
   }
 
   return {
-    init, refresh,
+    init, renderHome, refreshGoalsView, openGoalDetail, closeGoalDetail,
     showGoalCreateForm, hideGoalCreateForm, handleCreateGoal,
     showGoalContributeForm, showGoalWithdrawForm, hideGoalForms,
     handleContribute, handleWithdraw,

@@ -456,12 +456,26 @@ const VeilEngine = (() => {
     return result;
   }
 
+  /**
+   * Adds a goal to a vault that already exists (second, third, ... goal
+   * for the same wallet). Unlike createGoal, no passkey registration,
+   * the device is already registered from the vault's first goal.
+   */
+  async function addGoalToVault({ payerWallet, instruction, onProgress }) {
+    return _signAndSubmitWithRetry({
+      payerWallet,
+      onProgress,
+      buildTransaction: async () => ({ transaction: new window.solanaWeb3.Transaction().add(instruction) }),
+    });
+  }
+
   return {
     init,
     connectWallet,
     createPrivatePayment,
     executePrivatePayment,
     createGoal,
+    addGoalToVault,
     contributeToGoal,
     withdrawFromGoal,
     get isSimulated() { return false; },

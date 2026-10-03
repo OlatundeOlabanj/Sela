@@ -211,109 +211,20 @@
 <body>
 
   <!-- ── Navbar ── -->
-  <nav class="navbar">
-    <div class="container">
-      <a href="index.html" class="nav-logo">
-        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
-          <defs>
-            <linearGradient id="navSelaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#F4C752"/>
-              <stop offset="100%" stop-color="#C68A15"/>
-            </linearGradient>
-          </defs>
-          <rect width="28" height="28" rx="8" fill="#f59e0b" fill-opacity="0.15"/>
-          <circle cx="14" cy="14" r="7.5" fill="none" stroke="#f59e0b" stroke-opacity="0.25" stroke-width="2"/>
-          <path d="M14 6.5 A7.5 7.5 0 1 1 6.5 14" fill="none" stroke="url(#navSelaGrad)" stroke-width="2" stroke-linecap="round"/>
-          <circle cx="14" cy="14" r="1.8" fill="url(#navSelaGrad)"/>
-        </svg>
-        <span class="nav-logo-text">Se<span>la</span></span>
-      </a>
-      <div class="nav-actions">
-        <span id="walletAddressDisplay" class="wallet-address" style="display:none;"></span>
-        <button id="connectWalletBtn" class="btn btn-primary btn-sm" onclick="handleConnectWallet()">
-          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 12a2 2 0 0 0 0 4h4v-4h-4z"/>
-          </svg>
-          Connect Wallet
-        </button>
-      </div>
-    </div>
-  </nav>
+  <div class="app-shell">
 
-  <!-- ── Stats Bar ── -->
-  <div class="stats-bar" id="statsBar" style="display:none;">
-    <div class="container">
-      <div class="stat-item">
-        <div class="stat-label">Total Invoices</div>
-        <div class="stat-value" id="statTotal">-</div>
+    <div class="app-header">
+      <div>
+        <div class="app-greeting-label" id="appGreetingLabel">Good day</div>
+        <div class="app-greeting-name" id="appGreetingName">Connect your wallet</div>
       </div>
-      <div class="stat-item">
-        <div class="stat-label">Paid</div>
-        <div class="stat-value success" id="statPaid">-</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-label">Pending</div>
-        <div class="stat-value" id="statPending">-</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-label">Total Earned</div>
-        <div class="stat-value" id="statEarned">-</div>
-      </div>
+      <button class="app-avatar-btn" id="appAvatarBtn" onclick="handleAvatarClick()" aria-label="Wallet">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 12a2 2 0 0 0 0 4h4v-4h-4z"/></svg>
+      </button>
     </div>
-  </div>
 
-  <!-- ── Page Header + Tabs ── -->
-  <div class="page-header">
-    <div class="container">
-      <div class="page-header-inner">
-        <div>
-          <div class="page-title">Dashboard</div>
-          <div class="page-subtitle">Shared savings goals, allowances, invoices and swaps on Solana.</div>
-        </div>
-        <div class="cluster-badges" id="clusterBadges">
-          <span class="cluster-badge cluster-mainnet" title="Payments, swaps and RPC run on Solana mainnet, real money"><span class="cluster-dot"></span>Payments: mainnet</span>
-          <span class="cluster-badge" id="programClusterBadge" title="The Sela program and goal token run on this cluster"><span class="cluster-dot"></span>Program: <span id="programClusterName">devnet</span></span>
-          <span id="rpc-status-mount"></span>
-        </div>
-      </div>
-      <div class="tab-nav">
-        <button class="tab-btn active" data-tab="goals" onclick="switchTab('goals', this)">
-          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>
-          Goals
-        </button>
-        <button class="tab-btn" data-tab="allowances" onclick="switchTab('allowances', this)">
-          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg>
-          Allowances
-        </button>
-        <button class="tab-btn" data-tab="invoices" onclick="switchTab('invoices', this)">
-          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          Invoices
-          <span id="tabInvoiceCount" class="tab-badge" style="display:none;">0</span>
-        </button>
-        <button class="tab-btn" data-tab="swap" onclick="switchTab('swap', this)">
-          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M7 16V4m0 0L3 8m4-4l4 4"/><path d="M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>
-          Swap
-        </button>
-        <button class="tab-btn" data-tab="goal-token" onclick="switchTab('goal-token', this)">
-          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5h4a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3h4"/></svg>
-          Goal Token
-        </button>
-        <button class="tab-btn" data-tab="activity" onclick="switchTab('activity', this)">
-          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          Activity
-        </button>
-        <button class="tab-btn" data-tab="onramp" onclick="switchTab('onramp', this)">
-          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          Buy / Cash Out
-          <span style="font-size:var(--text-xs);background:var(--accent-dim);color:var(--accent);padding:1px 8px;border-radius:100px;margin-left:4px;font-weight:600;">SOON</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── First-Run Guidance Banner ── -->
-  <div id="onboardingBanner" class="onboarding-banner" style="display:none;">
-    <div class="container">
+    <!-- ── First-Run Guidance Banner ── -->
+    <div id="onboardingBanner" class="onboarding-banner" style="display:none;">
       <div class="onboarding-banner-inner">
         <div class="onboarding-banner-icon">
           <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -323,7 +234,7 @@
         <div class="onboarding-banner-text">
           <div class="onboarding-banner-title">Wallet connected. Here's what to do next</div>
           <div class="onboarding-banner-sub">
-            Sending an invoice? Fill in the form on this page and share the payment link it gives you.
+            Sending an invoice? Tap Invoice below and share the payment link it gives you.
             Paying one? You don't do that here, open the payment link your client sent you instead.
           </div>
         </div>
@@ -337,97 +248,167 @@
         </div>
       </div>
     </div>
-  </div>
 
-  <main>
-    <div class="container">
+    <!-- ══════════════ VIEW: Home ══════════════ -->
+    <div id="view-home" class="app-view active">
+
+      <div class="hero-balance-card">
+        <div class="hero-balance-label">
+          <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>
+          Total across goals
+        </div>
+        <div class="hero-balance-amount" id="heroBalanceAmount">-</div>
+        <div class="hero-balance-unit" id="heroBalanceUnit"></div>
+        <!-- No sparkline: there is no historical balance series anywhere
+             in this app (no snapshot log, no history endpoint) to plot
+             one from truthfully. Omitted rather than faked, see
+             goals-tab.js's top comment and the chat report. -->
+        <div class="hero-balance-caption" id="heroBalanceCaption">Payments: mainnet &middot; Goals: <span id="heroClusterName">devnet</span></div>
+        <button class="btn btn-primary btn-full hero-connect-btn" id="heroConnectBtn" onclick="handleConnectWallet()" style="display:none;">Connect Wallet</button>
+      </div>
+
+      <div class="action-row">
+        <button class="action-btn action-btn-primary" onclick="homeAction('contribute')">
+          <span class="action-btn-icon"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.25"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></span>
+          <span class="action-btn-label">Contribute</span>
+        </button>
+        <button class="action-btn" onclick="homeAction('withdraw')">
+          <span class="action-btn-icon"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.25"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg></span>
+          <span class="action-btn-label">Withdraw</span>
+        </button>
+        <button class="action-btn" onclick="homeAction('swap')">
+          <span class="action-btn-icon"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.25"><path d="M7 17L17 7"/><polyline points="7 7 17 7 17 17"/></svg></span>
+          <span class="action-btn-label">Swap</span>
+        </button>
+        <button class="action-btn" onclick="homeAction('invoice')">
+          <span class="action-btn-icon"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
+          <span class="action-btn-label">Invoice</span>
+        </button>
+      </div>
+
+      <div class="app-section-header">
+        <span class="app-section-title">Your goals</span>
+        <button class="app-section-link" onclick="switchView('goals')">See all</button>
+      </div>
+      <div class="goal-ring-row" id="homeGoalRings">
+        <div class="pane-note" style="padding:0.5rem 0;">Loading&hellip;</div>
+      </div>
+
+      <div class="app-section-header">
+        <span class="app-section-title" style="font-size:var(--text-sm);">This week's contributions</span>
+      </div>
+      <div class="week-chart-card" id="weekChartCard">
+        <div class="week-chart-header">
+          <span class="week-chart-title">&nbsp;</span>
+          <span class="week-chart-total" id="weekChartTotal">0.00 total</span>
+        </div>
+        <div class="week-chart-bars" id="weekChartBars"></div>
+      </div>
+
+      <div class="app-section-header">
+        <span class="app-section-title" style="font-size:var(--text-sm);">Recent activity</span>
+        <button class="app-section-link" onclick="switchView('activity')">See all</button>
+      </div>
+      <div id="homeActivityList"><div class="activity-empty">No activity yet.</div></div>
+
+    </div>
+
+    <!-- ══════════════ VIEW: Goals ══════════════ -->
+    <div id="view-goals" class="app-view">
 
       <!-- ── TAB: Goals ── -->
       <div id="tab-goals" class="tab-pane active">
-        <div class="card" style="max-width:520px;margin:0 auto;">
 
-          <!-- Program not deployed on this cluster: honest state, no CTA pretending otherwise -->
-          <div id="goalsNotDeployed" style="display:none;">
-            <div class="card-header"><span class="panel-title">Shared savings goal</span></div>
-            <p class="pane-note">The Sela program has not been deployed to <span id="goalsClusterName">devnet</span> yet, so there is nothing to connect to. Goals will work here once it is. See DEPLOY.md.</p>
-          </div>
-
-          <!-- Checking which state applies -->
-          <div id="goalsLoading">
-            <p class="pane-note">Checking the Sela program&hellip;</p>
-          </div>
-
-          <!-- No wallet connected -->
-          <div id="goalsNeedWallet" style="display:none;">
-            <div class="card-header"><span class="panel-title">Shared savings goal</span></div>
-            <p class="pane-note" style="margin-bottom:1.25rem;">Connect a wallet to create or view a shared goal.</p>
-            <button class="btn btn-primary btn-full" onclick="handleConnectWallet()">Connect Wallet</button>
-          </div>
-
-          <!-- No local goal yet: one primary action -->
-          <div id="goalsEmpty" style="display:none;">
-            <div class="card-header"><span class="panel-title">Shared savings goal</span></div>
-            <p class="pane-note" style="margin-bottom:1.25rem;">Create a goal, register a passkey for approvals, and start contributing in USDC.</p>
-            <button class="btn btn-primary btn-full" onclick="GoalsTab.showGoalCreateForm()">Create a Goal</button>
-          </div>
-
-          <!-- Create-goal form -->
-          <div id="goalsCreateForm" style="display:none;">
-            <div class="card-header"><span class="panel-title">Create a shared goal</span></div>
-            <div class="form-group">
-              <label class="form-label">Goal name</label>
-              <input type="text" id="goalName" class="form-input" placeholder="Family trip fund" maxlength="32">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Target amount (USDC)</label>
-              <input type="number" id="goalTarget" class="form-input" placeholder="500" min="1" step="0.01">
-            </div>
-            <p class="pane-note" style="margin-bottom:1.25rem;">Creating a goal registers a passkey on this device for approving contributions and withdrawals. Your browser will prompt you.</p>
-            <button class="btn btn-primary btn-full" id="goalCreateBtn" onclick="GoalsTab.handleCreateGoal()">Create Goal</button>
-            <button class="btn btn-ghost btn-full" style="margin-top:0.5rem;" onclick="GoalsTab.hideGoalCreateForm()">Cancel</button>
-          </div>
-
-          <!-- Active goal: real on-chain balance, one primary action (Contribute), Withdraw is secondary -->
-          <div id="goalsActive" style="display:none;">
-            <div class="card-header"><span class="panel-title" id="goalActiveName">Goal</span></div>
-            <div style="text-align:center;padding:1.5rem 0;border-bottom:1px solid var(--border);margin-bottom:1.25rem;">
-              <div class="stat-value accent" id="goalCurrentAmount" style="font-size:var(--text-lg);">Loading&hellip;</div>
-              <div class="pane-note" style="margin-top:0.25rem;">of <span id="goalTargetAmount">-</span> USDC target</div>
-            </div>
-            <button class="btn btn-primary btn-full" onclick="GoalsTab.showGoalContributeForm()">Contribute</button>
-            <button class="btn btn-ghost btn-full" style="margin-top:0.5rem;" onclick="GoalsTab.showGoalWithdrawForm()">Withdraw</button>
-          </div>
-
-          <!-- Contribute form -->
-          <div id="goalsContributeForm" style="display:none;">
-            <div class="card-header"><span class="panel-title">Contribute</span></div>
-            <div class="form-group">
-              <label class="form-label">Amount (USDC)</label>
-              <input type="number" id="contributeAmount" class="form-input" placeholder="25" min="0.01" step="0.01">
-            </div>
-            <p class="pane-note" style="margin-bottom:1.25rem;">Approved with your passkey. Your browser will prompt you.</p>
-            <button class="btn btn-primary btn-full" id="goalContributeBtn" onclick="GoalsTab.handleContribute()">Approve &amp; Contribute</button>
-            <button class="btn btn-ghost btn-full" style="margin-top:0.5rem;" onclick="GoalsTab.hideGoalForms()">Cancel</button>
-          </div>
-
-          <!-- Withdraw form -->
-          <div id="goalsWithdrawForm" style="display:none;">
-            <div class="card-header"><span class="panel-title">Withdraw</span></div>
-            <div class="form-group">
-              <label class="form-label">Amount (USDC)</label>
-              <input type="number" id="withdrawAmount" class="form-input" placeholder="25" min="0.01" step="0.01">
-            </div>
-            <p class="pane-note" style="margin-bottom:1.25rem;">Approved with your passkey. Your browser will prompt you.</p>
-            <button class="btn btn-primary btn-full" id="goalWithdrawBtn" onclick="GoalsTab.handleWithdraw()">Approve &amp; Withdraw</button>
-            <button class="btn btn-ghost btn-full" style="margin-top:0.5rem;" onclick="GoalsTab.hideGoalForms()">Cancel</button>
-          </div>
-
+        <!-- Program not deployed on this cluster: honest state, no CTA pretending otherwise -->
+        <div id="goalsNotDeployed" class="card" style="display:none;">
+          <div class="card-header"><span class="panel-title">Shared savings goals</span></div>
+          <p class="pane-note">The Sela program has not been deployed to <span id="goalsClusterName">devnet</span> yet, so there is nothing to connect to. Goals will work here once it is. See DEPLOY.md.</p>
         </div>
+
+        <!-- Checking which state applies -->
+        <div id="goalsLoading" class="card">
+          <p class="pane-note">Checking the Sela program&hellip;</p>
+        </div>
+
+        <!-- No wallet connected -->
+        <div id="goalsNeedWallet" class="card" style="display:none;">
+          <div class="card-header"><span class="panel-title">Shared savings goals</span></div>
+          <p class="pane-note" style="margin-bottom:1.25rem;">Connect a wallet to create or view a shared goal.</p>
+          <button class="btn btn-primary btn-full" onclick="handleConnectWallet()">Connect Wallet</button>
+        </div>
+
+        <!-- One or more goals: ring row (same component Home uses) plus a full list -->
+        <div id="goalsListWrap" style="display:none;">
+          <div class="goal-ring-row" id="goalsRingRow" style="margin-bottom:1.25rem;"></div>
+          <button class="btn btn-ghost btn-full" onclick="GoalsTab.showGoalCreateForm()">+ New Goal</button>
+        </div>
+
+        <!-- No goal yet: one primary action -->
+        <div id="goalsEmpty" class="card" style="display:none;">
+          <div class="card-header"><span class="panel-title">Shared savings goals</span></div>
+          <p class="pane-note" style="margin-bottom:1.25rem;">Create a goal, register a passkey for approvals, and start contributing in USDC.</p>
+          <button class="btn btn-primary btn-full" onclick="GoalsTab.showGoalCreateForm()">Create a Goal</button>
+        </div>
+
+        <!-- Create-goal form -->
+        <div id="goalsCreateForm" class="card" style="display:none;">
+          <div class="card-header"><span class="panel-title">Create a shared goal</span></div>
+          <div class="form-group">
+            <label class="form-label">Goal name</label>
+            <input type="text" id="goalName" class="form-input" placeholder="Family trip fund" maxlength="32">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Target amount (USDC)</label>
+            <input type="number" id="goalTarget" class="form-input" placeholder="500" min="1" step="0.01">
+          </div>
+          <p class="pane-note" id="goalCreateNote" style="margin-bottom:1.25rem;">Creating your first goal registers a passkey on this device for approving contributions and withdrawals. Your browser will prompt you.</p>
+          <button class="btn btn-primary btn-full" id="goalCreateBtn" onclick="GoalsTab.handleCreateGoal()">Create Goal</button>
+          <button class="btn btn-ghost btn-full" style="margin-top:0.5rem;" onclick="GoalsTab.hideGoalCreateForm()">Cancel</button>
+        </div>
+
+        <!-- Selected goal: real on-chain balance, one primary action (Contribute), Withdraw is secondary -->
+        <div id="goalsActive" class="card" style="display:none;">
+          <div class="card-header">
+            <span class="panel-title" id="goalActiveName">Goal</span>
+            <button class="app-section-link" onclick="GoalsTab.closeGoalDetail()">Back</button>
+          </div>
+          <div style="text-align:center;padding:1.5rem 0;border-bottom:1px solid var(--border);margin-bottom:1.25rem;">
+            <div class="stat-value accent" id="goalCurrentAmount" style="font-size:var(--text-lg);">Loading&hellip;</div>
+            <div class="pane-note" style="margin-top:0.25rem;">of <span id="goalTargetAmount">-</span> USDC target</div>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="GoalsTab.showGoalContributeForm()">Contribute</button>
+          <button class="btn btn-ghost btn-full" style="margin-top:0.5rem;" onclick="GoalsTab.showGoalWithdrawForm()">Withdraw</button>
+        </div>
+
+        <!-- Contribute form -->
+        <div id="goalsContributeForm" class="card" style="display:none;">
+          <div class="card-header"><span class="panel-title">Contribute</span></div>
+          <div class="form-group">
+            <label class="form-label">Amount (USDC)</label>
+            <input type="number" id="contributeAmount" class="form-input" placeholder="25" min="0.01" step="0.01">
+          </div>
+          <p class="pane-note" style="margin-bottom:1.25rem;">Approved with your passkey. Your browser will prompt you.</p>
+          <button class="btn btn-primary btn-full" id="goalContributeBtn" onclick="GoalsTab.handleContribute()">Approve &amp; Contribute</button>
+          <button class="btn btn-ghost btn-full" style="margin-top:0.5rem;" onclick="GoalsTab.hideGoalForms()">Cancel</button>
+        </div>
+
+        <!-- Withdraw form -->
+        <div id="goalsWithdrawForm" class="card" style="display:none;">
+          <div class="card-header"><span class="panel-title">Withdraw</span></div>
+          <div class="form-group">
+            <label class="form-label">Amount (USDC)</label>
+            <input type="number" id="withdrawAmount" class="form-input" placeholder="25" min="0.01" step="0.01">
+          </div>
+          <p class="pane-note" style="margin-bottom:1.25rem;">Approved with your passkey. Your browser will prompt you.</p>
+          <button class="btn btn-primary btn-full" id="goalWithdrawBtn" onclick="GoalsTab.handleWithdraw()">Approve &amp; Withdraw</button>
+          <button class="btn btn-ghost btn-full" style="margin-top:0.5rem;" onclick="GoalsTab.hideGoalForms()">Cancel</button>
+        </div>
+
       </div>
 
-      <!-- ── TAB: Allowances ── -->
-      <div id="tab-allowances" class="tab-pane">
-        <div class="card" style="max-width:720px;margin:0 auto;">
+      <!-- Allowances: a secondary section of the Goals view, not its own bottom tab -->
+      <div id="tab-allowances" style="margin-top:0.5rem;">
+        <div class="card">
           <div class="card-header">
             <span class="panel-title">Recurring allowances</span>
             <span class="pill pill-build">In build</span>
@@ -438,20 +419,32 @@
         </div>
       </div>
 
-      <!-- ── TAB: Goal Token (mount point, see MOUNTS.md) ── -->
-      <div id="tab-goal-token" class="tab-pane">
-        <div id="goal-token-mount"></div>
+    </div>
+
+    <!-- ══════════════ VIEW: Invoices (reached via the Home "Invoice" action button, not a bottom tab) ══════════════ -->
+    <div id="view-invoices" class="app-view">
+
+      <!-- ── Stats Bar ── -->
+      <div class="stats-bar" id="statsBar" style="display:none;margin-bottom:1rem;border-radius:var(--radius);border:1px solid var(--border);">
+        <div class="stat-item">
+          <div class="stat-label">Total Invoices</div>
+          <div class="stat-value" id="statTotal">-</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Paid</div>
+          <div class="stat-value success" id="statPaid">-</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Pending</div>
+          <div class="stat-value" id="statPending">-</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Total Earned</div>
+          <div class="stat-value" id="statEarned">-</div>
+        </div>
       </div>
 
-      <!-- ── TAB: Activity (mount point, see MOUNTS.md) ── -->
-      <div id="tab-activity" class="tab-pane">
-        <div id="activity-feed-mount"></div>
-      </div>
-
-      <!-- ── TAB: Invoices ── -->
-      <div id="tab-invoices" class="tab-pane">
-
-        <div class="invoice-form-panel">
+      <div class="invoice-form-panel">
           <div class="card">
             <div class="card-header">
               <span class="panel-title">
@@ -545,6 +538,12 @@
         </div>
 
       </div>
+
+    <!-- ══════════════ VIEW: Token (swap + goal token) ══════════════ -->
+    <div id="view-token" class="app-view">
+
+      <!-- ── Goal Token (mount point, see MOUNTS.md) ── -->
+      <div id="goal-token-mount"></div>
 
       <!-- ── TAB: Token Swap ── -->
       <div id="tab-swap" class="tab-pane">
@@ -649,8 +648,53 @@
         </div>
       </div>
 
+    </div>
+
+    <!-- ══════════════ VIEW: Activity ══════════════ -->
+    <div id="view-activity" class="app-view">
+      <div id="activity-feed-mount"></div>
+    </div>
+
+    <!-- ══════════════ VIEW: You (wallet, buy/cash out, recurring invoices) ══════════════ -->
+    <div id="view-you" class="app-view">
+
+      <div class="card" style="margin-bottom:1.25rem;">
+        <div class="card-header"><span class="panel-title">Wallet</span></div>
+        <div id="youWalletConnected" style="display:none;">
+          <p class="pane-note" style="font-family:var(--font-mono);word-break:break-all;margin-bottom:1rem;" id="youWalletAddress">-</p>
+          <button class="btn btn-ghost btn-full" onclick="handleDisconnectWallet()">Disconnect</button>
+        </div>
+        <div id="youWalletDisconnected">
+          <p class="pane-note" style="margin-bottom:1.25rem;">Connect a wallet to use Sela.</p>
+          <button class="btn btn-primary btn-full" onclick="handleConnectWallet()">Connect Wallet</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:1.25rem;">
+        <div class="card-header"><span class="panel-title">Network</span></div>
+        <div class="cluster-badges" id="clusterBadges" style="padding-top:0;">
+          <span class="cluster-badge cluster-mainnet" title="Payments, swaps and RPC run on Solana mainnet, real money"><span class="cluster-dot"></span>Payments: mainnet</span>
+          <span class="cluster-badge" id="programClusterBadge" title="The Sela program and goal token run on this cluster"><span class="cluster-dot"></span>Program: <span id="programClusterName">devnet</span></span>
+          <span id="rpc-status-mount"></span>
+        </div>
+      </div>
+
+      <div class="app-section-header" style="margin-top:0;">
+        <span class="app-section-title" style="font-size:var(--text-sm);">Recurring invoices</span>
+        <button class="app-section-link" onclick="switchView('subscriptions')">Open</button>
+      </div>
+
+      <div style="margin-top:2rem;padding-top:1.25rem;border-top:1px solid var(--border);text-align:center;">
+        <div class="footer-links" style="justify-content:center;margin-bottom:0.5rem;">
+          <a href="privacy.html">Privacy</a>
+          <span class="footer-dot">&middot;</span>
+          <a href="tos.html">Terms</a>
+        </div>
+        <span class="footer-brand">Made by TJS Code</span>
+      </div>
+
       <!-- ── TAB: Buy / Cash Out (Bitnob on/off-ramp) ── -->
-      <div id="tab-onramp" class="tab-pane">
+      <div id="tab-onramp" class="tab-pane" style="margin-top:1.25rem;">
         <div style="max-width:460px;margin:0 auto 1.25rem;text-align:center;">
           <div class="section-eyebrow" style="margin-bottom:0.4rem;">Naira On/Off-Ramp</div>
           <div style="color:var(--text-muted);font-size: var(--text-sm);">
@@ -733,7 +777,10 @@
         </div>
       </div>
 
-      <!-- ── TAB: Subscriptions ── -->
+    </div>
+
+    <!-- ══════════════ VIEW: Recurring invoices (reached from Invoices or You, not a bottom tab) ══════════════ -->
+    <div id="view-subscriptions" class="app-view">
       <div id="tab-subscriptions" class="tab-pane">
         <div class="dashboard-layout">
           <div>
@@ -808,20 +855,36 @@
       </div>
 
     </div>
-  </main>
+
+  </div><!-- /.app-shell -->
+
+  <!-- ── Bottom Tab Bar ── -->
+  <nav class="bottom-tab-bar">
+    <div class="bottom-tab-bar-inner">
+      <button class="bottom-tab-btn active" data-view="home" onclick="switchView('home')">
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg>
+        <span class="bottom-tab-btn-label">Home</span>
+      </button>
+      <button class="bottom-tab-btn" data-view="goals" onclick="switchView('goals')">
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>
+        <span class="bottom-tab-btn-label">Goals</span>
+      </button>
+      <button class="bottom-tab-btn" data-view="token" onclick="switchView('token')">
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M7 16V4m0 0L3 8m4-4l4 4"/><path d="M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>
+        <span class="bottom-tab-btn-label">Token</span>
+      </button>
+      <button class="bottom-tab-btn" data-view="activity" onclick="switchView('activity')">
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span class="bottom-tab-btn-label">Activity</span>
+      </button>
+      <button class="bottom-tab-btn" data-view="you" onclick="switchView('you')">
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+        <span class="bottom-tab-btn-label">You</span>
+      </button>
+    </div>
+  </nav>
 
   <!-- ── Footer ── -->
-  <footer>
-    <div class="container">
-      <span class="footer-text">Sela by TJS Code. Powered by the Smart TX Stack</span>
-      <div class="footer-links">
-        <a href="privacy.html">Privacy</a>
-        <span class="footer-dot">·</span>
-        <a href="tos.html">Terms</a>
-      </div>
-      <span class="footer-brand">Made by TJS Code</span>
-    </div>
-  </footer>
 
   <!-- ── Modal: Invoice Created ── -->
   <div class="modal-overlay" id="invoiceModal">
@@ -925,25 +988,52 @@
       updateStats();
     });
 
-    function switchTab(name, btn) {
-      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById('tab-' + name).classList.add('active');
-      // Recurring invoices has no tab of its own, it belongs to Invoices.
-      const tabKey = name === 'subscriptions' ? 'invoices' : name;
-      const target = btn || document.querySelector('.tab-btn[data-tab="' + tabKey + '"]');
+    // The five bottom-tab destinations. Invoices and Recurring invoices
+    // are real views too but reached only through an action button or a
+    // link (see MOUNTS.md / the Home action row), not their own bottom
+    // tab, so they're not in this map, but switchView still handles them.
+    const BOTTOM_TAB_FOR_VIEW = { home: 'home', goals: 'goals', token: 'token', activity: 'activity', you: 'you' };
+
+    function switchView(name) {
+      document.querySelectorAll('.app-view').forEach((p) => p.classList.remove('active'));
+      const target = document.getElementById('view-' + name);
       if (target) target.classList.add('active');
-      const stats = document.getElementById('statsBar');
-      if (stats) stats.style.display = (name === 'invoices' || name === 'subscriptions') ? '' : 'none';
-      if (name === 'swap' && !swapInitialized) {
-        VeilSwap.init();
-        swapInitialized = true;
-      }
-      if (name === 'onramp' && !onrampInitialized) {
-        VeilOnramp.init();
-        onrampInitialized = true;
-      }
+
+      const bottomKey = BOTTOM_TAB_FOR_VIEW[name] || (name === 'invoices' || name === 'subscriptions' ? 'you' : null);
+      document.querySelectorAll('.bottom-tab-btn').forEach((b) => b.classList.toggle('active', b.dataset.view === bottomKey));
+
+      if (name === 'token' && !swapInitialized) { VeilSwap.init(); swapInitialized = true; }
+      if (name === 'you' && !onrampInitialized) { VeilOnramp.init(); onrampInitialized = true; }
+      if (name === 'invoices') updateStats();
+
+      window.scrollTo({ top: 0, behavior: 'instant' });
       try { window.dispatchEvent(new CustomEvent('sela:tab', { detail: { tab: name } })); } catch (e) {}
+    }
+    // Old name, some inline handlers and other sessions' code may still
+    // call this directly, same behavior.
+    function switchTab(name) { switchView(name); }
+
+    // The four Home action buttons. Contribute/Withdraw open the Goals
+    // view where a specific goal is picked, there's no single goal to
+    // default to once a wallet can have more than one.
+    function homeAction(kind) {
+      if (kind === 'invoice') { switchView('invoices'); return; }
+      if (kind === 'swap') { switchView('token'); return; }
+      switchView('goals'); // contribute / withdraw
+    }
+
+    function handleDisconnectWallet() {
+      Cognata.WalletState.clear();
+      // A clean reload is the honest way to reset every screen that
+      // depends on wallet state (invoice form, swap, goals, hero
+      // balance) rather than trying to manually unwind each one.
+      window.location.reload();
+    }
+
+    function handleAvatarClick() {
+      const wallet = Cognata.WalletState.get();
+      if (wallet?.publicKey) switchView('you');
+      else handleConnectWallet();
     }
 
     function updateStats() {
@@ -960,9 +1050,8 @@
       // wallet with nothing earned yet gets plain text, not emphasis
       // that implies something to look at.
       statEarnedEl.classList.toggle('accent', earned > 0);
-      const cnt = document.getElementById('tabInvoiceCount');
-      if (invoices.length > 0) { cnt.textContent = invoices.length; cnt.style.display = 'inline'; }
-      else cnt.style.display = 'none';
+      const statsBar = document.getElementById('statsBar');
+      if (statsBar) statsBar.style.display = invoices.length > 0 ? '' : 'none';
     }
 
     async function restoreWalletState() {
@@ -1059,12 +1148,20 @@
       });
     }
 
+    function greetingForNow() {
+      const h = new Date().getHours();
+      return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+    }
+
     function applyWalletConnected(wallet) {
-      const btn = document.getElementById('connectWalletBtn');
-      const disp = document.getElementById('walletAddressDisplay');
-      btn.style.display = 'none';
-      disp.style.display = 'block';
-      disp.textContent = wallet.truncated || Cognata.truncateWallet(wallet.publicKey);
+      const truncated = wallet.truncated || Cognata.truncateWallet(wallet.publicKey);
+      document.getElementById('appGreetingLabel').textContent = greetingForNow();
+      document.getElementById('appGreetingName').textContent = truncated;
+      document.getElementById('appAvatarBtn').textContent = (wallet.walletName || 'W')[0].toUpperCase();
+      document.getElementById('youWalletConnected').style.display = '';
+      document.getElementById('youWalletDisconnected').style.display = 'none';
+      document.getElementById('youWalletAddress').textContent = wallet.publicKey;
+      document.getElementById('heroConnectBtn').style.display = 'none';
       document.getElementById('recipientWallet').value = wallet.publicKey;
       document.getElementById('invoiceForm').classList.remove('form-disabled');
       document.getElementById('connectPrompt').style.display = 'none';
