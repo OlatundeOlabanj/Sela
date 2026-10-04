@@ -103,6 +103,20 @@
     .engine-item svg { flex-shrink: 0; margin-top: 4px; }
     .grid-4 { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
     .feature-card .pill { margin-bottom: 0.9rem; }
+    /* ── Proof section (real screenshot or an honest fallback, never an illustration) ── */
+    .proof-frame { max-width: 880px; margin: 0 auto; border-radius: var(--radius-lg); border: 1px solid var(--border-light); background: linear-gradient(160deg, rgba(245,158,11,0.1), var(--bg-card) 60%); padding: 0.6rem; }
+    .proof-img { display: block; width: 100%; border-radius: var(--radius); }
+    .proof-fallback { display: none; aspect-ratio: 9 / 14; max-width: 360px; margin: 0 auto; align-items: center; justify-content: center; flex-direction: column; gap: 0.75rem; background: var(--bg); border-radius: var(--radius); color: var(--text-dim); text-align: center; padding: 2rem; }
+    .proof-fallback.show { display: flex; }
+
+    /* ── Trust section ── */
+    .trust-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; max-width: 720px; margin: 0 auto; }
+    @media (min-width: 640px) { .trust-grid { grid-template-columns: 1fr 1fr; } }
+    .trust-item { display: flex; gap: 0.9rem; align-items: flex-start; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem; text-align: left; }
+    .trust-item svg { flex-shrink: 0; margin-top: 2px; color: var(--accent); }
+    .trust-item-title { font-size: var(--text-sm); font-weight: 600; color: var(--text); margin-bottom: 0.2rem; }
+    .trust-item-sub { font-size: var(--text-xs); color: var(--text-muted); line-height: var(--leading-normal); }
+    .trust-item-sub a { color: var(--accent); }
   </style>
 </head>
 <body>
@@ -134,110 +148,35 @@
   <section class="hero">
     <div class="hero-bg"></div>
     <div class="container" style="position:relative;z-index:1;">
-      <div class="hero-content">
-        <div class="hero-eyebrow">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/></svg>
-          Shared savings goals on Solana
+      <div class="hero-content" style="max-width:680px;margin:0 auto;text-align:center;">
+        <div class="hero-eyebrow" style="justify-content:center;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+          No email. No password. No account to create.
         </div>
-        <h1>Save together.<br>Fund it in <span>USDC.</span></h1>
-        <p class="hero-explain">Sela lets a family or a group of friends fund one shared goal, set up recurring allowances, and approve withdrawals with a passkey instead of a seed phrase. The balance sits on Solana, so everyone can check it themselves.</p>
-        <p class="hero-status">Status: shared goals, allowances and passkey approvals are in active build, starting on devnet. Invoicing and token swaps are live on mainnet today, on the same payment engine.</p>
-        <div class="hero-cta">
+        <h1>Save together on Solana.<br>Your face or fingerprint <span>is the login.</span></h1>
+        <p class="hero-explain" style="margin-left:auto;margin-right:auto;">There's no signup form because there's nothing to sign up for. Connect a Solana wallet, and from then on your device's own Face ID or fingerprint, a passkey, approves every contribution and withdrawal. Nothing to remember, nothing stored anywhere that could leak.</p>
+        <div class="hero-cta" style="justify-content:center;">
           <a href="dashboard.html" class="btn btn-primary btn-lg">
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-            Open Sela
+            Create Your First Goal
           </a>
           <a href="#how" class="btn btn-ghost btn-lg">
             How it works
             <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
           </a>
         </div>
-
-        <div class="hero-stats">
-          <div>
-            <div class="hero-stat-value">USDC</div>
-            <div class="hero-stat-label">Goal currency</div>
-          </div>
-          <div class="hero-stat-divider"></div>
-          <div>
-            <div class="hero-stat-value">Jito + RPC</div>
-            <div class="hero-stat-label">Dual-send landing</div>
-          </div>
-          <div class="hero-stat-divider"></div>
-          <div>
-            <div class="hero-stat-value">2%</div>
-            <div class="hero-stat-label">Invoice platform fee</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="floating-badge" id="status">
-        <div class="fb-header">
-          <span class="fb-label">Build status</span>
-        </div>
-        <div class="status-list">
-          <div class="status-row">Invoicing <span class="pill pill-live">Live</span></div>
-          <div class="status-row">Token swap <span class="pill pill-live">Live</span></div>
-          <div class="status-row">Shared goals <span class="pill pill-build">In build</span></div>
-          <div class="status-row">Allowances <span class="pill pill-build">In build</span></div>
-          <div class="status-row">Passkey approvals <span class="pill pill-build">In build</span></div>
-          <div class="status-row">Goal token <span class="pill pill-build">Coming soon</span></div>
-        </div>
       </div>
     </div>
   </section>
 
-  <section class="section" id="features">
+  <section class="section" id="proof" style="padding-top:0;">
     <div class="container">
-      <div class="text-center">
-        <div class="section-eyebrow">What Sela does</div>
-        <h2 class="section-heading">One goal. Everyone can see it.<br>Nobody holds the keys alone.</h2>
-        <p class="section-sub">Sela keeps a shared goal in a Solana program, not in a spreadsheet or one person's wallet. These are the three pieces, and where each one stands.</p>
-      </div>
-
-      <div class="grid-3">
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="var(--text-muted)" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>
-          </div>
-          <span class="pill pill-build">In build</span>
-          <h3>Shared savings goals</h3>
-          <p>Create a goal with a target, then let each member contribute USDC. The balance is read from the chain, so it is the same number for everyone.</p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="var(--text-muted)" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg>
-          </div>
-          <span class="pill pill-build">In build</span>
-          <h3>Recurring allowances</h3>
-          <p>Authorize a weekly or monthly amount once. A keeper triggers each payment when it is due, and the on-chain rules cap it at the amount you approved.</p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="var(--text-muted)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
-          </div>
-          <span class="pill pill-build">In build</span>
-          <h3>Passkey approvals</h3>
-          <p>Contributions and withdrawals are approved with a device passkey. There is no seed phrase to hand to a family member, and each device is registered to the goal.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="how-section" id="engine">
-    <div class="container" style="padding:4rem 1.5rem;">
-      <div class="engine-grid">
-        <div>
-          <div class="section-eyebrow">The payment engine</div>
-          <h2 class="section-heading">Built on a stack that already moves real USDC.</h2>
-          <p style="color:var(--text-muted);font-size: var(--text-sm);line-height:1.75;max-width:520px;">Every Sela payment goes through the Smart TX Stack, first built for invoicing and running on mainnet today. Goals and allowances reuse it instead of a plain wallet transfer.</p>
-        </div>
-        <div class="engine-list">
-          <div class="engine-item"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="var(--success)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>Submitted as a Jito bundle with a live-market tip, and sent to a standard RPC at the same time.</span></div>
-          <div class="engine-item"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="var(--success)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>An AI agent decides whether a stalled transaction should be retried, and at what tip.</span></div>
-          <div class="engine-item"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="var(--success)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>Retries wait for the old blockhash to expire first, so a slow payment cannot be charged twice.</span></div>
+      <div class="proof-frame">
+        <img class="proof-img" src="assets/dashboard-preview.png" alt="The Sela dashboard: balance, goals, and recent activity"
+          onerror="this.style.display='none';this.nextElementSibling.classList.add('show');">
+        <div class="proof-fallback">
+          <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          <span style="font-size:var(--text-xs);">Dashboard preview coming soon. assets/dashboard-preview.png not uploaded yet.</span>
         </div>
       </div>
     </div>
@@ -247,40 +186,68 @@
     <div class="container">
       <div class="text-center" style="padding:1rem 0 2.5rem;">
         <div class="section-eyebrow">How it works</div>
-        <h2 class="section-heading">From an empty goal to a full one.</h2>
+        <h2 class="section-heading">From connecting a wallet to a family goal that fills itself.</h2>
       </div>
       <div class="steps-grid">
         <div class="step">
           <div class="step-number">01</div>
-          <h4>Create a goal</h4>
-          <p>Name it, set a USDC target, and register the devices of the people who can approve.</p>
+          <h4>Connect a wallet</h4>
+          <p>Phantom, Solflare, whatever you already have. This is the only thing resembling a login, and it's just a wallet you control.</p>
         </div>
         <div class="step">
           <div class="step-number">02</div>
-          <h4>Contribute</h4>
-          <p>Add USDC whenever you like. Each contribution is approved with your passkey.</p>
+          <h4>Create a goal, register your passkey</h4>
+          <p>Name it, set a USDC target. Your browser prompts for Face ID or a fingerprint once, that's your approval key from here on.</p>
         </div>
         <div class="step">
           <div class="step-number">03</div>
-          <h4>Set an allowance</h4>
-          <p>Approve a recurring amount once. It runs on schedule without another prompt.</p>
+          <h4>Invite a family member</h4>
+          <p>Share a one-time link. They connect their own wallet and register their own passkey on their own device, no key ever leaves either phone.</p>
         </div>
         <div class="step">
           <div class="step-number">04</div>
-          <h4>Watch it fill</h4>
-          <p>The goal balance comes from the chain, and the goal completes when it reaches the target.</p>
+          <h4>Contribute, approve, watch it fill</h4>
+          <p>Either of you can add USDC anytime. Every contribution and withdrawal is approved with a face scan or fingerprint, and the balance comes straight from the chain.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="section" id="invoicing">
+  <section class="section" id="trust">
     <div class="container">
-      <div class="text-center">
-        <div class="section-eyebrow">Also live: invoicing</div>
-        <h2 class="section-heading">The payment engine's first use.</h2>
-        <p class="section-sub" style="margin-bottom:2rem;">Freelancers and small teams can already create an invoice, share the link, and get paid in USDC straight to their wallet on Solana mainnet. A 2% platform fee applies, and there is no account or KYC.</p>
-        <a href="dashboard.html" class="btn btn-ghost btn-lg">Create an invoice</a>
+      <div class="text-center" style="padding-bottom:2rem;">
+        <div class="section-eyebrow">Why trust it</div>
+        <h2 class="section-heading">Checkable claims, not reassurance copy.</h2>
+      </div>
+      <div class="trust-grid">
+        <div class="trust-item">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="2"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+          <div>
+            <div class="trust-item-title">Payments run on a live mainnet engine</div>
+            <div class="trust-item-sub">Invoicing and swaps already move real USDC on Solana mainnet today, Jito bundles plus a standard RPC sent at the same time, the same engine goals and allowances use.</div>
+          </div>
+        </div>
+        <div class="trust-item">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <div>
+            <div class="trust-item-title">The on-chain program is public</div>
+            <div class="trust-item-sub">Goals, allowances and passkey approvals run through a deployed Solana program you can inspect yourself: <a href="https://explorer.solana.com/address/EPqdJo6sJP9R3RCKh2RFLMt7T6orrkjV1ub584dcM2Vr?cluster=devnet" target="_blank" rel="noopener">view it on Solana Explorer</a> (devnet, where goals currently run).</div>
+          </div>
+        </div>
+        <div class="trust-item">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+          <div>
+            <div class="trust-item-title">Passkeys, not seed phrases</div>
+            <div class="trust-item-sub">Approvals use your device's own secure hardware (the same system behind Face ID and fingerprint unlock), not a 12-word phrase anyone could copy down or lose.</div>
+          </div>
+        </div>
+        <div class="trust-item">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+          <div>
+            <div class="trust-item-title">No custody, ever</div>
+            <div class="trust-item-sub">Sela never holds your funds or your keys. Every transaction is signed on your own device and settles directly on Solana.</div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -288,11 +255,11 @@
   <section class="cta-bottom" id="cta">
     <div class="container">
       <div class="section-eyebrow" style="margin-bottom:0.75rem;">Ready to try it?</div>
-      <h2>Connect a wallet and look around.</h2>
-      <p style="max-width:460px;margin:0.75rem auto 2rem;font-size: var(--text-sm);">Invoicing and swaps work today. Goals and allowances are labelled in the app while they are being finished.</p>
+      <h2>No account. Just a wallet and your face.</h2>
+      <p style="max-width:460px;margin:0.75rem auto 2rem;font-size: var(--text-sm);">Create a goal, register your passkey, invite someone. The whole flow takes under a minute.</p>
       <a href="dashboard.html" class="btn btn-primary btn-lg">
         <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-        Open Dashboard
+        Create Your First Goal
       </a>
     </div>
   </section>
