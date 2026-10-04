@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Join a Goal, Sela</title>
+  <meta name="description" content="Accept an invite to a shared Sela savings goal. Register your own passkey, no key is ever shared between devices." />
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Sela" />
+  <meta property="og:title" content="Join a Goal, Sela" />
+  <meta property="og:description" content="Accept an invite to a shared Sela savings goal." />
+  <meta property="og:image" content="https://selaaa.netlify.app/assets/og-image.png" />
+  <meta name="robots" content="noindex" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body { display: flex; flex-direction: column; min-height: 100vh; }
+    main { flex: 1; }
+    .join-wrapper { display: flex; align-items: flex-start; justify-content: center; padding: 3rem 1.25rem; min-height: 80vh; }
+    .join-card { width: 100%; max-width: 440px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+    .join-card-bar { height: 4px; background: linear-gradient(90deg, var(--accent), #fbbf24); }
+    .join-card-body { padding: 2rem; text-align: center; }
+    .join-icon { width: 56px; height: 56px; border-radius: 50%; background: var(--accent-dim); border: 1px solid rgba(245,158,11,0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; color: var(--accent); }
+    .join-vault-name { font-size: var(--text-md); font-weight: 700; color: var(--text); margin-bottom: 0.4rem; }
+    .join-step { font-size: var(--text-sm); color: var(--text-muted); line-height: var(--leading-normal); margin-bottom: 1.5rem; }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+          <defs><linearGradient id="navSelaGrad2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#F4C752"/><stop offset="100%" stop-color="#C68A15"/></linearGradient></defs>
+          <rect width="28" height="28" rx="8" fill="#f59e0b" fill-opacity="0.15"/>
+          <circle cx="14" cy="14" r="7.5" fill="none" stroke="#f59e0b" stroke-opacity="0.25" stroke-width="2"/>
+          <path d="M14 6.5 A7.5 7.5 0 1 1 6.5 14" fill="none" stroke="url(#navSelaGrad2)" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="14" cy="14" r="1.8" fill="url(#navSelaGrad2)"/>
+        </svg>
+        <span class="nav-logo-text">Se<span>la</span></span>
+      </a>
+    </div>
+  </nav>
+
+  <main>
+    <div class="join-wrapper">
+      <div class="join-card">
+        <div class="join-card-bar"></div>
+        <div class="join-card-body">
+
+          <div id="stateLoading">
+            <p class="pane-note">Checking your invite&hellip;</p>
+          </div>
+
+          <div id="stateInvalid" style="display:none;">
+            <div class="join-icon"><svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
+            <div class="join-vault-name">This invite isn't valid</div>
+            <p class="join-step" id="invalidReason">It may have already been used, or expired.</p>
+          </div>
+
+          <div id="stateReady" style="display:none;">
+            <div class="join-icon"><svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></div>
+            <div class="join-vault-name" id="readyVaultName">Shared goal</div>
+            <p class="join-step">You've been invited to join as a contributing member. You'll register your own passkey, nothing is shared from the other device.</p>
+            <button class="btn btn-primary btn-full" id="connectBtn" onclick="handleConnect()">Connect Wallet</button>
+            <button class="btn btn-primary btn-full" id="joinBtn" onclick="handleJoin()" style="display:none;">Register Passkey &amp; Request to Join</button>
+          </div>
+
+          <div id="stateSent" style="display:none;">
+            <div class="join-icon" style="background:var(--success-dim);border-color:rgba(16,185,129,0.3);color:var(--success);"><svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg></div>
+            <div class="join-vault-name">Request sent</div>
+            <p class="join-step">The vault owner needs to approve this from their device before you can contribute. You'll be able to use Sela as soon as they do, no further action needed from you here.</p>
+          </div>
+
+          <div id="stateError" style="display:none;">
+            <div class="join-icon"><svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
+            <div class="join-vault-name">Something went wrong</div>
+            <p class="join-step" id="errorReason"></p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <span class="footer-text">Sela by TJS Code. Powered by the Smart TX Stack</span>
+      <div class="footer-links">
+        <a href="privacy.html">Privacy</a>
+        <span class="footer-dot">&middot;</span>
+        <a href="tos.html">Terms</a>
+      </div>
+      <span class="footer-brand">Made by TJS Code</span>
+    </div>
+  </footer>
+
+  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+  <script src="wallet-adapter.js"></script>
+  <script src="sela-config.js"></script>
+  <script src="payment-transfer.js"></script>
+  <script src="program-client.js"></script>
+  <script src="passkey-client.js"></script>
+  <script src="smart-tx.js"></script>
+  <script src="veil-engine.js"></script>
+  <script src="app.js"></script>
+
+  <script>
+    let invite = null;
+    let connectedWallet = null;
+
+    function showState(id) {
+      ['stateLoading', 'stateInvalid', 'stateReady', 'stateSent', 'stateError'].forEach((x) => {
+        document.getElementById(x).style.display = x === id ? '' : 'none';
+      });
+    }
+
+    async function loadInvite() {
+      const code = new URLSearchParams(window.location.search).get('code');
+      if (!code) { showState('stateInvalid'); return; }
+      try {
+        const res = await fetch('/api/invite?code=' + encodeURIComponent(code));
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          document.getElementById('invalidReason').textContent = body.error || 'This invite is no longer valid.';
+          showState('stateInvalid');
+          return;
+        }
+        invite = await res.json();
+        document.getElementById('readyVaultName').textContent = invite.vaultName;
+        showState('stateReady');
+      } catch (err) {
+        document.getElementById('invalidReason').textContent = 'Could not reach the server. Check your connection and reload.';
+        showState('stateInvalid');
+      }
+    }
+
+    async function handleConnect() {
+      await Cognata.connectWalletUI({
+        onSuccess(wallet) {
+          connectedWallet = wallet.publicKey;
+          document.getElementById('connectBtn').style.display = 'none';
+          document.getElementById('joinBtn').style.display = '';
+        },
+        onError(err) {
+          document.getElementById('errorReason').textContent = err.message || 'Wallet connection failed.';
+          showState('stateError');
+        },
+      });
+    }
+
+    async function handleJoin() {
+      const btn = document.getElementById('joinBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner" style="width:15px;height:15px;"></span> Registering passkey\u2026';
+      try {
+        const { compressedPubkey, credentialId } = await PasskeyClient.registerPasskey({ label: invite.vaultName + ' member' });
+        PasskeyClient.rememberCredentialForVault(invite.vaultPda, credentialId);
+
+        btn.innerHTML = '<span class="spinner" style="width:15px;height:15px;"></span> Requesting to join\u2026';
+        const { instruction } = CognataProgram.buildRequestKeyRotationInstruction({
+          payer: connectedWallet,
+          vaultPda: invite.vaultPda,
+          deviceRole: invite.deviceRole,
+          newDeviceCompressedPubkey: compressedPubkey,
+        });
+        await VeilEngine.requestJoinVault({ payerWallet: connectedWallet, instruction });
+
+        // Remember this credential locally the same way goals-tab.js
+        // does for the owner, so once approved this device can actually
+        // sign contributions without registering a second passkey.
+        function toB64(bytes) { let bin = ''; for (const b of bytes) bin += String.fromCharCode(b); return btoa(bin); }
+        localStorage.setItem('sela_vault_pointer_' + connectedWallet, JSON.stringify({
+          vaultPda: invite.vaultPda,
+          deviceRole: invite.deviceRole,
+          credentialId: toB64(credentialId),
+          compressedPubkey33: toB64(compressedPubkey),
+        }));
+
+        await fetch('/api/invite', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: invite.code, usedBy: connectedWallet }),
+        });
+
+        showState('stateSent');
+      } catch (err) {
+        document.getElementById('errorReason').textContent = err.message || 'Could not submit the join request.';
+        showState('stateError');
+        btn.disabled = false;
+        btn.innerHTML = 'Register Passkey &amp; Request to Join';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadInvite);
+  </script>
+
+</body>
+</html>

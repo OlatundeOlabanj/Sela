@@ -469,6 +469,24 @@ const VeilEngine = (() => {
     });
   }
 
+  /** New member joining an existing vault: signed by their own wallet,
+   * not the owner's, see program-client.js buildRequestKeyRotationInstruction. */
+  async function requestJoinVault({ payerWallet, instruction, onProgress }) {
+    return _signAndSubmitWithRetry({
+      payerWallet, onProgress,
+      buildTransaction: async () => ({ transaction: new window.solanaWeb3.Transaction().add(instruction) }),
+    });
+  }
+
+  /** Owner/guardian approving a pending join (or revoking, if the
+   * instruction was built with an all-zero new device pubkey). */
+  async function approveJoinRequest({ payerWallet, instruction, onProgress }) {
+    return _signAndSubmitWithRetry({
+      payerWallet, onProgress,
+      buildTransaction: async () => ({ transaction: new window.solanaWeb3.Transaction().add(instruction) }),
+    });
+  }
+
   return {
     init,
     connectWallet,
@@ -476,6 +494,8 @@ const VeilEngine = (() => {
     executePrivatePayment,
     createGoal,
     addGoalToVault,
+    requestJoinVault,
+    approveJoinRequest,
     contributeToGoal,
     withdrawFromGoal,
     get isSimulated() { return false; },

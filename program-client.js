@@ -468,6 +468,83 @@ const CognataProgram = (() => {
     };
   }
 
+  function deriveRotationRequestPda(vaultPda, deviceRole) {
+    const web3 = _web3();
+    const [pda, bump] = web3.PublicKey.findProgramAddressSync(
+      [new TextEncoder().encode('rotation'), new web3.PublicKey(vaultPda).toBuffer(), _u8(deviceRole)],
+      new web3.PublicKey(PROGRAM_ID),
+    );
+    return { pda, bump };
+  }
+
+  /**
+   * Builds `request_key_rotation`. This is also how a second family
+   * member joins: the same instruction the program calls "key
+   * rotation" is, mechanically, the only existing way to set a
+   * vault's device_role=1 slot after vault creation (there is no
+   * separate "add member" instruction, and none was added for this,
+   * see ACCOUNTS.md / the join flow notes). `payer` is the NEW
+   * member's own wallet, not the vault owner's, they pay their own
+   * account creation rent and sign with their own key, no key
+   * material is ever shared between devices.
+   */
+  function buildRequestKeyRotationInstruction({ payer, vaultPda, deviceRole, newDeviceCompressedPubkey }) {
+    const web3 = _web3();
+    const { pda: rotationPda } = deriveRotationRequestPda(vaultPda, deviceRole);
+    const data = _concat([
+      new Uint8Array(DISCRIMINATORS.request_key_rotation),
+      _u8(deviceRole),
+      new Uint8Array(newDeviceCompressedPubkey),
+    ]);
+    const keys = [
+      _meta(payer, true, true),
+      _meta(vaultPda, false, false),
+      _meta(rotationPda, false, true),
+      _meta(web3.SystemProgram.programId, false, false),
+    ];
+    return { instruction: new web3.TransactionInstruction({ programId: new web3.PublicKey(PROGRAM_ID), keys, data }), rotationPda };
+  }
+
+  /**
+   * Builds `approve_key_rotation`. Guardian-only (vault.guardian must
+   * sign), writes new_device_pubkey into the vault's device_role slot
+   * unconditionally, this is what actually grants authority, the
+   * request itself grants nothing. Approving a rotation to a 33-byte
+   * all-zero pubkey is also how a device gets revoked, there is no
+   * separate revoke instruction, see the join flow notes.
+   */
+  function buildApproveKeyRotationInstruction({ guardian, vaultPda, deviceRole }) {
+    const web3 = _web3();
+    const { pda: rotationPda } = deriveRotationRequestPda(vaultPda, deviceRole);
+    const data = new Uint8Array(DISCRIMINATORS.approve_key_rotation);
+    const keys = [
+      _meta(guardian, true, false),
+      _meta(vaultPda, false, true),
+      _meta(rotationPda, false, true),
+    ];
+    return new web3.TransactionInstruction({ programId: new web3.PublicKey(PROGRAM_ID), keys, data });
+  }
+
+  const ROTATION_STATUS = { 0: 'Pending', 1: 'Approved', 2: 'Executed', 3: 'Rejected' };
+
+  function decodeKeyRotationRequest(data) {
+    const d = data instanceof Uint8Array ? data : new Uint8Array(data);
+    const dv = new DataView(d.buffer, d.byteOffset, d.byteLength);
+    let o = 8;
+    const vault = d.slice(o, o + 32); o += 32;
+    const deviceRole = d[o]; o += 1;
+    const lostDevicePubkey = d.slice(o, o + 33); o += 33;
+    const newDevicePubkey = d.slice(o, o + 33); o += 33;
+    const guardian = d.slice(o, o + 32); o += 32;
+    const status = ROTATION_STATUS[d[o]] || 'Unknown'; o += 1;
+    const requestedAt = dv.getBigInt64(o, true); o += 8;
+    const approvedAt = dv.getBigInt64(o, true); o += 8;
+    return {
+      vault: new (_web3().PublicKey)(vault), deviceRole, lostDevicePubkey, newDevicePubkey,
+      guardian: new (_web3().PublicKey)(guardian), status, requestedAt, approvedAt,
+    };
+  }
+
   return {
     PROGRAM_ID,
     deriveVaultPda,
@@ -476,6 +553,10 @@ const CognataProgram = (() => {
     deriveTreasuryPda,
     deriveWalletAuthorityPda,
     deriveDelegatePda,
+    deriveRotationRequestPda,
+    buildRequestKeyRotationInstruction,
+    buildApproveKeyRotationInstruction,
+    decodeKeyRotationRequest,
     getAssociatedTokenAddress,
     buildContributeInstruction,
     buildWithdrawInstruction,

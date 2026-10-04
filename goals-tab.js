@@ -283,6 +283,117 @@ const GoalsTab = (() => {
     _renderActivityList('homeActivityList', wallet.publicKey, 5);
   }
 
+  // ---- Family (invite / approve / revoke) ----
+  // v1 constraint, not a bug to work around: FamilyVault has exactly two
+  // fixed device slots on-chain (primary_contributor_device at role 0,
+  // partner_device at role 1), not an extensible list, so this is "one
+  // partner per vault," full stop, until the program itself changes.
+  const ZERO_DEVICE = new Uint8Array(33); // all-zero = slot never set
+
+  function _isZeroDevice(bytes) { return bytes.every((b) => b === 0); }
+
+  let currentVault = null; // decoded FamilyVault, refreshed alongside the goals list
+
+  async function _renderFamilySection(wallet, pointer, vault) {
+    const listEl = document.getElementById('familyMemberList');
+    const isGuardian = vault.guardian.toBase58() === wallet;
+    const partnerSet = !_isZeroDevice(vault.partnerDevice);
+
+    listEl.innerHTML = `
+      <div class="activity-row" style="border-top:none;padding-top:0;">
+        <span class="activity-icon in"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></span>
+        <div><div class="activity-row-title">${isGuardian ? 'You (Owner)' : 'Owner'}</div></div>
+      </div>
+      <div class="activity-row">
+        <span class="activity-icon ${partnerSet ? 'in' : 'out'}"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></span>
+        <div><div class="activity-row-title">${partnerSet ? (pointer.deviceRole === 1 ? 'You (Member)' : 'Member') : 'No member yet'}</div></div>
+      </div>`;
+
+    document.getElementById('inviteBtn').style.display = (isGuardian && !partnerSet) ? '' : 'none';
+    document.getElementById('inviteFull').style.display = (isGuardian && partnerSet) ? '' : 'none';
+    document.getElementById('inviteLinkBox').style.display = 'none';
+
+    const pendingBox = document.getElementById('pendingJoinRequest');
+    pendingBox.style.display = 'none';
+    if (isGuardian && !partnerSet) {
+      try {
+        const { pda: rotationPda } = window.CognataProgram.deriveRotationRequestPda(pointer.vaultPda, 1);
+        const info = await _getConnection().getAccountInfo(rotationPda);
+        if (info) {
+          const req = window.CognataProgram.decodeKeyRotationRequest(info.data);
+          if (req.status === 'Pending') {
+            pendingBox.style.display = '';
+            document.getElementById('pendingJoinDevice').textContent =
+              'New device key: ' + Array.from(req.newDevicePubkey).map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16) + '\u2026';
+          }
+        }
+      } catch (err) { console.error('[Goals] pending-request check failed:', err.message); }
+    }
+  }
+
+  let lastInviteCode = null;
+
+  async function handleCreateInvite() {
+    const wallet = window.Cognata.WalletState.get();
+    const pointer = _getVaultPointer(wallet.publicKey);
+    if (!pointer || !currentVault) return;
+
+    const btn = document.getElementById('inviteBtn');
+    btn.disabled = true;
+    btn.textContent = 'Creating invite\u2026';
+    try {
+      const res = await fetch('/api/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vaultPda: pointer.vaultPda,
+          vaultName: currentGoalsList[0]?.name || 'Shared goal',
+          deviceRole: 1,
+          createdBy: wallet.publicKey,
+        }),
+      });
+      if (!res.ok) throw new Error('Could not create invite (' + res.status + ')');
+      const record = await res.json();
+      lastInviteCode = record.code;
+      const link = `${window.location.origin}/join.html?code=${record.code}`;
+      document.getElementById('inviteLinkText').value = link;
+      document.getElementById('inviteLinkBox').style.display = '';
+    } catch (err) {
+      window.Cognata.showToast('Could not create invite: ' + err.message, 'red');
+    }
+    btn.disabled = false;
+    btn.textContent = 'Invite a Family Member';
+  }
+
+  function copyInviteLink() {
+    const input = document.getElementById('inviteLinkText');
+    input.select();
+    navigator.clipboard?.writeText(input.value);
+    window.Cognata.showToast('Link copied.', 'green');
+  }
+
+  async function handleApproveJoin() {
+    const wallet = window.Cognata.WalletState.get();
+    const pointer = _getVaultPointer(wallet.publicKey);
+    if (!pointer) return;
+
+    const btn = document.querySelector('#pendingJoinRequest button');
+    btn.disabled = true;
+    btn.textContent = 'Approving\u2026';
+    try {
+      const instruction = window.CognataProgram.buildApproveKeyRotationInstruction({
+        guardian: wallet.publicKey, vaultPda: pointer.vaultPda, deviceRole: 1,
+      });
+      await window.VeilEngine.approveJoinRequest({ payerWallet: wallet.publicKey, instruction });
+      window.Cognata.showToast('Family member approved.', 'green');
+      await refreshGoalsView();
+    } catch (err) {
+      window.Cognata.showToast('Approval failed: ' + err.message, 'red');
+    }
+    btn.disabled = false;
+    btn.textContent = 'Approve';
+  }
+
   // ---- Goals view ----
   let currentGoalsList = [];
 
@@ -304,12 +415,14 @@ const GoalsTab = (() => {
     const pointer = _getVaultPointer(wallet.publicKey);
     if (!pointer) { _showOnly('goalsEmpty'); return; }
 
-    const { goals } = await _fetchAllGoals(pointer.vaultPda);
+    const { vault, goals } = await _fetchAllGoals(pointer.vaultPda);
     currentGoalsList = goals;
+    currentVault = vault;
     if (!goals.length) { _showOnly('goalsEmpty'); return; }
 
     _showOnly('goalsListWrap');
     _renderRingRow(document.getElementById('goalsRingRow'), goals, { tappable: true });
+    if (vault) await _renderFamilySection(wallet.publicKey, pointer, vault);
   }
 
   function openGoalDetail(index) {
@@ -522,6 +635,7 @@ const GoalsTab = (() => {
     showGoalCreateForm, hideGoalCreateForm, handleCreateGoal,
     showGoalContributeForm, showGoalWithdrawForm, hideGoalForms,
     handleContribute, handleWithdraw,
+    handleCreateInvite, copyInviteLink, handleApproveJoin,
   };
 })();
 

@@ -630,8 +630,20 @@ window.pauseSubUI = function(subId) {
 
 
 // ─── Expose globally ──────────────────────────────────────────────────────────
+//
+// Named Cognata, not VeilPay: every call site across dashboard.html,
+// pay.html, tos.html and goals-tab.js already calls Cognata.xxx (a
+// side effect of the VeilPay-to-Cognata rebrand pass early in this
+// project, which renamed those call sites in the HTML files' inline
+// scripts but never updated this export to match, since this file
+// wasn't touched by that pass). That mismatch meant window.Cognata
+// was undefined this whole time, every one of those ~100 call sites
+// has been throwing since the rebrand, this is likely the real reason
+// the dashboard has looked broken. Fixing the export name here, to
+// match everything that already expects it, rather than renaming
+// ~100 call sites back.
 
-window.VeilPay = {
+window.Cognata = {
   generateUUID,
   saveInvoice,
   getInvoice,
