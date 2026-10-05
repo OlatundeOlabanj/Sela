@@ -103,8 +103,8 @@
   },
 
   "dbcSwap": {
-    "amountIn": 16, // POC buy-in amount in USDC, adjust per test
-    "slippageBps": 100,
+    "amountIn": 7, // POC buy-in amount in USDC, adjust per test
+    "slippageBps": 500,
     "swapBaseForQuote": false, // false = buying the goal token with USDC
     "referralTokenAccount": null
   },
