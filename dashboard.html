@@ -360,9 +360,9 @@
             <button class="btn btn-ghost btn-full" id="inviteBtn" onclick="GoalsTab.handleCreateInvite()">Invite a Family Member</button>
             <div id="inviteLinkBox" style="display:none;margin-top:0.75rem;">
               <div class="pane-note" style="margin-bottom:0.4rem;">Share this link, it works once and expires in 7 days:</div>
-              <div style="display:flex;gap:0.5rem;">
-                <input type="text" id="inviteLinkText" class="form-input" readonly style="font-family:var(--font-mono);font-size:var(--text-xs);">
-                <button class="btn btn-ghost btn-sm" onclick="GoalsTab.copyInviteLink()">Copy</button>
+              <div style="display:flex;gap:0.5rem;min-width:0;">
+                <input type="text" id="inviteLinkText" class="form-input" readonly style="font-family:var(--font-mono);font-size:var(--text-xs);min-width:0;flex:1 1 auto;">
+                <button class="btn btn-ghost btn-sm" style="flex:0 0 auto;" onclick="GoalsTab.copyInviteLink()">Copy</button>
               </div>
             </div>
           </div>

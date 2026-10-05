@@ -227,10 +227,17 @@ footer .container { display: flex; align-items: center; justify-content: space-b
    One responsive column: full-bleed on a phone, centered at phone
    width on desktop, same markup either way (Cash App / Wise web
    pattern), never two separate layouts. */
-.app-shell { width: 100%; max-width: 480px; margin: 0 auto; min-height: 100vh; padding: 0 1rem 6.5rem; position: relative; }
+.app-shell { width: 100%; max-width: 480px; margin: 0 auto; min-height: 100vh; padding: 0 1rem calc(7rem + env(safe-area-inset-bottom, 0px)); position: relative; overflow-x: hidden; }
 @media (min-width: 481px) {
-  body:has(.app-shell) { background: var(--bg-secondary, #06060e); }
-  .app-shell { background: var(--bg); min-height: 100vh; box-shadow: 0 0 0 1px var(--border); }
+  /* --bg-secondary was referenced here but never defined anywhere in
+     this file, so it silently fell back to a color one shade off
+     --bg, near-zero contrast. That's the actual bug behind "everything
+     centered with tons of dead space either side": the frame around
+     the column was never visible, so the centering never read as
+     deliberate. Real color now, plus a visible border instead of a
+     1px box-shadow that was too subtle to register as an edge. */
+  body:has(.app-shell) { background: #000000; }
+  .app-shell { background: var(--bg); min-height: 100vh; border-left: 1px solid var(--border-light); border-right: 1px solid var(--border-light); box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 }
 
 .app-header { display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 0 1rem; }
@@ -305,12 +312,15 @@ footer .container { display: flex; align-items: center; justify-content: space-b
 .activity-row-amount.in { color: var(--success); }
 .activity-empty { padding: 1.5rem 0; text-align: center; color: var(--text-dim); font-size: var(--text-sm); }
 
-/* Bottom tab bar: fixed, mobile convention, five destinations. */
-.bottom-tab-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: rgba(5,8,15,0.92); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-top: 1px solid var(--border); display: flex; justify-content: center; }
-.bottom-tab-bar-inner { width: 100%; max-width: 480px; display: flex; }
-.bottom-tab-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.7rem 0 calc(0.6rem + env(safe-area-inset-bottom, 0px)); background: none; border: none; cursor: pointer; color: var(--text-dim); font-family: var(--font-body); }
+/* Bottom tab bar: fixed, mobile convention, five destinations. Sized
+   to match the app-shell column exactly, never wider, so it reads as
+   that column's own nav rather than a bar floating independently at
+   a different width. */
+.bottom-tab-bar { position: fixed; bottom: 0; left: 0; right: 0; width: 100%; max-width: 100vw; z-index: 100; background: rgba(5,8,15,0.92); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-top: 1px solid var(--border); display: flex; justify-content: center; overflow: hidden; }
+.bottom-tab-bar-inner { width: 100%; max-width: 480px; display: flex; min-width: 0; }
+.bottom-tab-btn { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 0.2rem; padding: 0.6rem 0 calc(0.5rem + env(safe-area-inset-bottom, 0px)); background: none; border: none; cursor: pointer; color: var(--text-dim); font-family: var(--font-body); -webkit-tap-highlight-color: transparent; }
 .bottom-tab-btn.active { color: var(--accent); }
-.bottom-tab-btn-label { font-size: var(--text-xs); }
+.bottom-tab-btn-label { font-size: var(--text-xs); white-space: nowrap; }
 
 .app-view { display: none; }
 .app-view.active { display: block; }
