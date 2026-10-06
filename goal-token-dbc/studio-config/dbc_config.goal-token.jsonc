@@ -20,7 +20,7 @@
     "buildCurveMode": 0, // buildCurve: single segment, monotonic price
 
     "percentageSupplyOnMigration": 20, // 20% of total supply migrates into the DAMM v2 pool
-    "migrationQuoteThreshold": 35, // POC goal amount in USDC. Real goals use their own target.
+    "migrationQuoteThreshold": 12, // POC goal amount in USDC. Real goals use their own target.
 
     "token": {
       "totalTokenSupply": 1000000000,
@@ -103,7 +103,7 @@
   },
 
   "dbcSwap": {
-    "amountIn": 7, // POC buy-in amount in USDC, adjust per test
+    "amountIn": 8, // POC buy-in amount in USDC, adjust per test
     "slippageBps": 500,
     "swapBaseForQuote": false, // false = buying the goal token with USDC
     "referralTokenAccount": null
