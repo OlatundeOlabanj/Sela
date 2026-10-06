@@ -79,6 +79,15 @@ const VeilWalletAdapter = (() => {
   function _initStandardDiscovery() {
     try {
       window.addEventListener('wallet-standard:register-wallet', (event) => {
+        // Some wallet extensions dispatch this event with a detail shape
+        // that doesn't match the Wallet Standard spec (detail.register
+        // should always be a function). Guard instead of letting every
+        // such wallet throw on every page load; logged once per event so
+        // it's still visible which extension is non-compliant.
+        if (typeof event.detail?.register !== 'function') {
+          console.warn('[VeilWallet] Ignoring non-compliant register-wallet event (detail.register is not a function):', event.detail);
+          return;
+        }
         try { event.detail.register(_registerStandardWallet); } catch (err) { console.warn('[VeilWallet] register-wallet handler failed:', err); }
       });
       window.dispatchEvent(new CustomEvent('wallet-standard:app-ready', {

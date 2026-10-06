@@ -47,8 +47,9 @@ const VeilEngine = (() => {
     return _activeProvider;
   }
 
-  async function _rpc(method, params) {
-    const res = await fetch('/api/rpc', {
+  async function _rpc(method, params, cluster = 'mainnet-beta') {
+    const url = cluster === 'devnet' ? '/api/rpc?cluster=devnet' : '/api/rpc';
+    const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
@@ -56,6 +57,20 @@ const VeilEngine = (() => {
     const data = await res.json();
     if (data.error) throw new Error(data.error.message || `RPC ${method} failed`);
     return data.result;
+  }
+
+  // Devnet has no Jito equivalent, so goal/vault/passkey operations (which
+  // run on SELA_CONFIG.PROGRAM_CLUSTER, devnet today) submit with a plain
+  // sendTransaction instead of the mainnet Jito dual-send. Preflight stays
+  // on, same as a normal wallet send, so a bad transaction is rejected here
+  // rather than silently accepted and failing later.
+  async function _submitDevnet(signedTxBase64) {
+    try {
+      await _rpc('sendTransaction', [signedTxBase64, { encoding: 'base64', skipPreflight: false }], 'devnet');
+      return { success: true, usedFallback: false };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
   }
 
   async function init() {
@@ -230,9 +245,10 @@ const VeilEngine = (() => {
    * critically, it does NOT require a fresh passkey touch per retry,
    * see contributeToGoal's comment on why that's sound.
    */
-  async function _signAndSubmitWithRetry({ payerWallet, buildTransaction, onProgress }) {
+  async function _signAndSubmitWithRetry({ payerWallet, buildTransaction, onProgress, cluster = 'mainnet-beta' }) {
     const activeProvider = _getActiveProvider();
     if (!activeProvider) throw new Error('Wallet not connected.');
+    const isDevnet = cluster === 'devnet';
 
     // Start at HIGH (p75 landed-tip), not MEDIUM (p50). p50 means half of
     // recently landed bundles needed MORE than this to land. A coin flip
@@ -247,8 +263,10 @@ const VeilEngine = (() => {
       attempt++;
       onProgress?.('depositing'); // "Building transaction" step in the UI
 
-      const { tipLamports, tipAccount } = await SmartTX.getTip(urgency);
-      const { blockhash } = await _rpc('getLatestBlockhash', [{ commitment: 'confirmed' }]).then(r => r.value ?? r);
+      const { tipLamports, tipAccount } = isDevnet
+        ? { tipLamports: 0, tipAccount: null }
+        : await SmartTX.getTip(urgency);
+      const { blockhash } = await _rpc('getLatestBlockhash', [{ commitment: 'confirmed' }], cluster).then(r => r.value ?? r);
 
       const { transaction, ...meta } = await buildTransaction({ tipLamports, tipAccount });
       lastMeta = meta;
@@ -261,7 +279,9 @@ const VeilEngine = (() => {
       const signature = _base58Encode(signedTx.signatures[0].signature);
 
       onProgress?.('transferring'); // "Submitting via Smart TX Stack" step in the UI
-      const submission = await SmartTX.submitTransaction({ signedTxBase64, signature });
+      const submission = isDevnet
+        ? await _submitDevnet(signedTxBase64)
+        : await SmartTX.submitTransaction({ signedTxBase64, signature });
 
       if (!submission.success) {
         lastError = submission.error || 'Submission failed';
@@ -380,6 +400,7 @@ const VeilEngine = (() => {
     return _signAndSubmitWithRetry({
       payerWallet,
       onProgress,
+      cluster: window.SELA_CONFIG.PROGRAM_CLUSTER,
       buildTransaction: async () => {
         const web3 = window.solanaWeb3;
         const transaction = new web3.Transaction().add(precompileIx).add(businessIx);
@@ -408,6 +429,7 @@ const VeilEngine = (() => {
     return _signAndSubmitWithRetry({
       payerWallet,
       onProgress,
+      cluster: window.SELA_CONFIG.PROGRAM_CLUSTER,
       buildTransaction: async () => {
         const web3 = window.solanaWeb3;
         const transaction = new web3.Transaction().add(precompileIx).add(businessIx);
@@ -438,6 +460,7 @@ const VeilEngine = (() => {
     const result = await _signAndSubmitWithRetry({
       payerWallet,
       onProgress,
+      cluster: window.SELA_CONFIG.PROGRAM_CLUSTER,
       buildTransaction: async () => {
         const { instruction: vaultIx, vaultPda } = CP.buildInitFamilyVaultInstruction({
           payer: payerWallet, vaultSeedPubkey: vaultSeed,
@@ -465,6 +488,7 @@ const VeilEngine = (() => {
     return _signAndSubmitWithRetry({
       payerWallet,
       onProgress,
+      cluster: window.SELA_CONFIG.PROGRAM_CLUSTER,
       buildTransaction: async () => ({ transaction: new window.solanaWeb3.Transaction().add(instruction) }),
     });
   }
@@ -474,6 +498,7 @@ const VeilEngine = (() => {
   async function requestJoinVault({ payerWallet, instruction, onProgress }) {
     return _signAndSubmitWithRetry({
       payerWallet, onProgress,
+      cluster: window.SELA_CONFIG.PROGRAM_CLUSTER,
       buildTransaction: async () => ({ transaction: new window.solanaWeb3.Transaction().add(instruction) }),
     });
   }
@@ -483,6 +508,7 @@ const VeilEngine = (() => {
   async function approveJoinRequest({ payerWallet, instruction, onProgress }) {
     return _signAndSubmitWithRetry({
       payerWallet, onProgress,
+      cluster: window.SELA_CONFIG.PROGRAM_CLUSTER,
       buildTransaction: async () => ({ transaction: new window.solanaWeb3.Transaction().add(instruction) }),
     });
   }
