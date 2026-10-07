@@ -104,9 +104,13 @@
     .grid-4 { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
     .feature-card .pill { margin-bottom: 0.9rem; }
     /* ── Proof section (real screenshot or an honest fallback, never an illustration) ── */
-    .proof-frame { max-width: 880px; margin: 0 auto; border-radius: var(--radius-lg); border: 1px solid var(--border-light); background: linear-gradient(160deg, rgba(245,158,11,0.1), var(--bg-card) 60%); padding: 0.6rem; }
+    /* The real dashboard is phone-width (the app shell caps at
+       480px), so the proof frame around its screenshot is phone-
+       proportioned too, not a wide desktop frame with a narrow image
+       floating in the middle of it. */
+    .proof-frame { max-width: 360px; margin: 0 auto; border-radius: var(--radius-lg); border: 1px solid var(--border-light); background: linear-gradient(160deg, rgba(245,158,11,0.1), var(--bg-card) 60%); padding: 0.6rem; }
     .proof-img { display: block; width: 100%; border-radius: var(--radius); }
-    .proof-fallback { display: none; aspect-ratio: 9 / 14; max-width: 360px; margin: 0 auto; align-items: center; justify-content: center; flex-direction: column; gap: 0.75rem; background: var(--bg); border-radius: var(--radius); color: var(--text-dim); text-align: center; padding: 2rem; }
+    .proof-fallback { display: none; aspect-ratio: 9 / 16; width: 100%; align-items: center; justify-content: center; flex-direction: column; gap: 0.75rem; background: var(--bg); border-radius: var(--radius); color: var(--text-dim); text-align: center; padding: 2rem; }
     .proof-fallback.show { display: flex; }
 
     /* ── Trust section ── */

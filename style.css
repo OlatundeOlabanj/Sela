@@ -81,7 +81,10 @@ p { color: var(--text-muted); line-height: var(--leading-normal); }
 .text-right { text-align: right; }
 
 .navbar { position: sticky; top: 0; z-index: 100; background: rgba(5, 8, 15, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); padding: 1rem 0; }
-.navbar .container { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+/* Narrower than the shared 1200px .container: at full width the logo
+   and the two nav buttons were two small clusters with a huge empty
+   gap between them, reads as unfinished rather than spacious. */
+.navbar .container { display: flex; align-items: center; justify-content: space-between; gap: 1rem; max-width: 960px; }
 .nav-logo { display: flex; align-items: center; gap: 0.5rem; text-decoration: none; }
 .nav-logo-text { font-size: var(--text-lg); font-weight: 700; color: var(--text); letter-spacing: -0.03em; }
 .nav-logo-text span { color: var(--accent); }
@@ -99,7 +102,7 @@ p { color: var(--text-muted); line-height: var(--leading-normal); }
 .btn-danger:hover:not(:disabled) { background: var(--error); color: #fff; }
 .btn-sm { padding: 0.4rem 0.9rem; font-size: var(--text-xs); }
 .btn-lg { padding: 0.85rem 2rem; font-size: var(--text-md); }
-.btn-full { width: 100%; }
+.btn-full { width: 100%; white-space: normal; }
 
 .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.5rem; transition: border-color var(--transition); }
 .card:hover { border-color: var(--border-light); }

@@ -163,7 +163,7 @@ const VeilOnrampModule = (() => {
       return;
     }
 
-    const wallet = window.VeilPay?.WalletState?.get();
+    const wallet = window.Cognata?.WalletState?.get();
     const userRef = wallet?.publicKey || 'guest';
 
     setBtnState('confirming', 'Confirming…');

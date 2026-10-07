@@ -60,8 +60,13 @@
     .tab-btn:hover { color: var(--text); }
     .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
     .tab-badge { font-size: var(--text-xs); font-weight: 700; background: var(--accent-dim); color: var(--accent); border-radius: 100px; padding: 0.1rem 0.45rem; }
-    .tab-pane { display: none; padding: 1.75rem 0; }
-    .tab-pane.active { display: block; animation: fadeSlideIn 0.25s ease; }
+    /* .tab-pane used to gate its own visibility (display:none until
+       .active), that's now handled one level up by .app-view since
+       the bottom-tab-bar rebuild. A .tab-pane defaulting to hidden
+       with nothing left to ever add .active to it was silently
+       hiding the Swap, Buy/Cash Out and Recurring Invoices content
+       entirely, this is that fix. */
+    .tab-pane { padding: 1.75rem 0; animation: fadeSlideIn 0.25s ease; }
 
     /* ── Dashboard Layout ── */
     .dashboard-layout { display: grid; grid-template-columns: 1fr; gap: 1.5rem; align-items: start; }
@@ -252,6 +257,20 @@
     <!-- ══════════════ VIEW: Home ══════════════ -->
     <div id="view-home" class="app-view active">
 
+      <!-- Shown only when no wallet is connected. This product has no
+           email/password signup, so this screen does that screen's job:
+           a plain-language welcome and one clear way to start. -->
+      <div id="homeWelcome" class="card" style="display:none;text-align:center;padding:2.25rem 1.5rem;">
+        <div style="width:56px;height:56px;border-radius:50%;background:var(--accent-dim);border:1px solid rgba(245,158,11,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;color:var(--accent);">
+          <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+        </div>
+        <div style="font-size:var(--text-md);font-weight:700;color:var(--text);margin-bottom:0.5rem;">Welcome to Sela</div>
+        <p class="pane-note" style="margin-bottom:1.5rem;">No email, no password to set. Connect a Solana wallet, then your device's own Face ID or fingerprint, a passkey, approves everything from there. That's the whole sign-up.</p>
+        <button class="btn btn-primary btn-full" onclick="handleConnectWallet()">Connect Wallet</button>
+      </div>
+
+      <div id="homeConnected">
+
       <div class="hero-balance-card">
         <div class="hero-balance-label">
           <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>
@@ -264,7 +283,6 @@
              one from truthfully. Omitted rather than faked, see
              goals-tab.js's top comment and the chat report. -->
         <div class="hero-balance-caption" id="heroBalanceCaption">Payments: mainnet &middot; Goals: <span id="heroClusterName">devnet</span></div>
-        <button class="btn btn-primary btn-full hero-connect-btn" id="heroConnectBtn" onclick="handleConnectWallet()" style="display:none;">Connect Wallet</button>
       </div>
 
       <div class="action-row">
@@ -310,6 +328,8 @@
         <button class="app-section-link" onclick="switchView('activity')">See all</button>
       </div>
       <div id="homeActivityList"><div class="activity-empty">No activity yet.</div></div>
+
+      </div><!-- /#homeConnected -->
 
     </div>
 
@@ -440,7 +460,8 @@
           </div>
           <p class="pane-note" style="margin-bottom:1rem;">Approve a weekly or monthly USDC amount for a goal once. A keeper submits each payment when it is due, and the on-chain rules cap it at the amount you approved.</p>
           <p class="pane-note">Upcoming and past disbursements will be listed here once allowances are switched on for the deployed program.</p>
-          <button class="btn btn-primary btn-full" style="margin-top:1.25rem;" disabled>Create an allowance (available after the program is deployed)</button>
+          <button class="btn btn-primary btn-full" style="margin-top:1.25rem;" disabled>Create an Allowance</button>
+          <p class="pane-note" style="margin-top:0.5rem;text-align:center;">Available once allowances are switched on for the deployed program.</p>
         </div>
       </div>
 
@@ -695,6 +716,22 @@
         </div>
       </div>
 
+      <div class="card" style="margin-bottom:1.25rem;" id="youPasskeyCard">
+        <div class="card-header"><span class="panel-title">Passkey</span></div>
+        <div id="youPasskeyNone">
+          <p class="pane-note">No passkey registered on this device yet. One gets created automatically the first time you create or join a goal, your browser will prompt you.</p>
+        </div>
+        <div id="youPasskeyActive" style="display:none;">
+          <div class="activity-row" style="border-top:none;padding-top:0;">
+            <span class="activity-icon in"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span>
+            <div>
+              <div class="activity-row-title" id="youPasskeyRole">Owner</div>
+              <div class="activity-row-sub">Registered on this device, approves your contributions and withdrawals</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="card" style="margin-bottom:1.25rem;">
         <div class="card-header"><span class="panel-title">Network</span></div>
         <div class="cluster-badges" id="clusterBadges" style="padding-top:0;">
@@ -707,6 +744,15 @@
       <div class="app-section-header" style="margin-top:0;">
         <span class="app-section-title" style="font-size:var(--text-sm);">Recurring invoices</span>
         <button class="app-section-link" onclick="switchView('subscriptions')">Open</button>
+      </div>
+
+      <div class="card" style="margin-top:1.25rem;">
+        <div class="card-header"><span class="panel-title">About Sela</span></div>
+        <p class="pane-note">Shared savings goals on Solana. No email, no password, your device's passkey approves everything. Payments and swaps run on a live mainnet engine, goals and allowances run on the program linked below.</p>
+        <div style="display:flex;gap:0.75rem;margin-top:1rem;flex-wrap:wrap;">
+          <a href="index.html" class="btn btn-ghost btn-sm">About / Landing Page</a>
+          <a id="youExplorerLink" href="#" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">View Program</a>
+        </div>
       </div>
 
       <div style="margin-top:2rem;padding-top:1.25rem;border-top:1px solid var(--border);text-align:center;">

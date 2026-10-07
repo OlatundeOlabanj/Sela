@@ -536,7 +536,7 @@ const VeilSwapModule = (() => {
   function init() {
     buildDropdowns();
     renderHistory();
-    const wallet = window.VeilPay?.WalletState?.get();
+    const wallet = window.Cognata?.WalletState?.get();
     if (wallet?.publicKey) {
       syncWallet(wallet.publicKey);
       loadBalances();

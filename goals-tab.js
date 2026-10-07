@@ -251,20 +251,19 @@ const GoalsTab = (() => {
     if (clusterEl) clusterEl.textContent = window.SELA_CONFIG.PROGRAM_CLUSTER;
 
     const wallet = window.Cognata?.WalletState?.get();
-    const amountEl = document.getElementById('heroBalanceAmount');
-    const unitEl = document.getElementById('heroBalanceUnit');
-    const connectBtn = document.getElementById('heroConnectBtn');
+    const welcomeEl = document.getElementById('homeWelcome');
+    const connectedEl = document.getElementById('homeConnected');
 
     if (!wallet?.publicKey) {
-      amountEl.textContent = '-';
-      unitEl.textContent = '';
-      connectBtn.style.display = '';
-      document.getElementById('homeGoalRings').innerHTML = '<div class="pane-note">Connect a wallet to see your goals.</div>';
-      document.getElementById('homeActivityList').innerHTML = '<div class="activity-empty">No activity yet.</div>';
-      _renderWeekChart('');
+      welcomeEl.style.display = '';
+      connectedEl.style.display = 'none';
       return;
     }
-    connectBtn.style.display = 'none';
+    welcomeEl.style.display = 'none';
+    connectedEl.style.display = '';
+
+    const amountEl = document.getElementById('heroBalanceAmount');
+    const unitEl = document.getElementById('heroBalanceUnit');
 
     const pointer = _getVaultPointer(wallet.publicKey);
     if (!pointer) {
@@ -618,20 +617,47 @@ const GoalsTab = (() => {
     }
   }
 
+  // ---- You view: passkey card + program explorer link ----
+  function renderYou() {
+    const explorerLink = document.getElementById('youExplorerLink');
+    if (explorerLink) {
+      const cfg = window.SELA_CONFIG;
+      const clusterParam = cfg.PROGRAM_CLUSTER === 'mainnet-beta' ? '' : `?cluster=${cfg.PROGRAM_CLUSTER}`;
+      explorerLink.href = `https://explorer.solana.com/address/${cfg.PROGRAM_ID}${clusterParam}`;
+    }
+
+    const wallet = window.Cognata?.WalletState?.get();
+    const noneEl = document.getElementById('youPasskeyNone');
+    const activeEl = document.getElementById('youPasskeyActive');
+    if (!noneEl || !activeEl) return;
+
+    const pointer = wallet?.publicKey ? _getVaultPointer(wallet.publicKey) : null;
+    if (!pointer) {
+      noneEl.style.display = '';
+      activeEl.style.display = 'none';
+      return;
+    }
+    noneEl.style.display = 'none';
+    activeEl.style.display = '';
+    document.getElementById('youPasskeyRole').textContent = pointer.deviceRole === 0 ? 'Owner' : 'Member';
+  }
+
   function init() {
     if (initialized) return;
     initialized = true;
     renderHome();
     refreshGoalsView();
+    renderYou();
     window.addEventListener('sela:tab', (e) => {
       if (e.detail.tab === 'home') renderHome();
       if (e.detail.tab === 'goals') refreshGoalsView();
+      if (e.detail.tab === 'you') renderYou();
     });
-    window.addEventListener('sela:wallet-connected', () => { renderHome(); refreshGoalsView(); });
+    window.addEventListener('sela:wallet-connected', () => { renderHome(); refreshGoalsView(); renderYou(); });
   }
 
   return {
-    init, renderHome, refreshGoalsView, openGoalDetail, closeGoalDetail,
+    init, renderHome, refreshGoalsView, renderYou, openGoalDetail, closeGoalDetail,
     showGoalCreateForm, hideGoalCreateForm, handleCreateGoal,
     showGoalContributeForm, showGoalWithdrawForm, hideGoalForms,
     handleContribute, handleWithdraw,
