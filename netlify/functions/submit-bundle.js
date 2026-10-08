@@ -29,6 +29,7 @@
 // Made by TJS Code
 
 const { getRpcUrl } = require('../../lib/rpcClient');
+const { isAllowedOrigin } = require('../../lib/originGuard');
 
 const JITO_BUNDLES_URL = 'https://mainnet.block-engine.jito.wtf/api/v1/bundles';
 
@@ -103,8 +104,7 @@ async function pollBundleStatusForLogging(bundleId, signature) {
 
 exports.handler = async (event) => {
   const headers = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
-  const origin = event.headers?.origin || event.headers?.referer || '';
-  if (origin && !origin.includes('veilpay.store') && !origin.includes('veilpay-tjscode.netlify.app') && !origin.includes('localhost')) {
+  if (!isAllowedOrigin(event.headers)) {
     return { statusCode: 403, headers, body: JSON.stringify({ error: 'Forbidden origin.' }) };
   }
   if (event.httpMethod !== 'POST') {

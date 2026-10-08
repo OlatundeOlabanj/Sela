@@ -7,6 +7,7 @@
 //
 // Made by TJS Code
 
+const { isAllowedOrigin } = require('../../lib/originGuard');
 const JITO_TIP_FLOOR_URL = 'https://bundles.jito.wtf/api/v1/bundles/tip_floor';
 const JITO_BUNDLES_URL = 'https://mainnet.block-engine.jito.wtf/api/v1/bundles';
 const CACHE_TTL_MS = 30_000;
@@ -73,8 +74,7 @@ async function fetchTipAccount() {
 
 exports.handler = async (event) => {
   const headers = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
-  const origin = event.headers?.origin || event.headers?.referer || '';
-  if (origin && !origin.includes('veilpay.store') && !origin.includes('veilpay-tjscode.netlify.app') && !origin.includes('localhost')) {
+  if (!isAllowedOrigin(event.headers)) {
     return { statusCode: 403, headers, body: JSON.stringify({ error: 'Forbidden origin.' }) };
   }
   const urgency = (event.queryStringParameters?.urgency || 'MEDIUM').toUpperCase();

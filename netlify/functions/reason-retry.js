@@ -12,6 +12,7 @@
 //
 // Made by TJS Code
 
+const { isAllowedOrigin } = require('../../lib/originGuard');
 const GROQ_MODEL = 'openai/gpt-oss-120b';
 const MIN_CONFIDENCE = 0.6;
 
@@ -58,8 +59,7 @@ Respond with ONLY a valid JSON object. No preamble.
 
 exports.handler = async (event) => {
   const headers = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
-  const origin = event.headers?.origin || event.headers?.referer || '';
-  if (origin && !origin.includes('veilpay.store') && !origin.includes('veilpay-tjscode.netlify.app') && !origin.includes('localhost')) {
+  if (!isAllowedOrigin(event.headers)) {
     return { statusCode: 403, headers, body: JSON.stringify({ error: 'Forbidden origin.' }) };
   }
   if (event.httpMethod !== 'POST') {
