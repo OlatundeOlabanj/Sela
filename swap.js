@@ -46,7 +46,15 @@ const VeilSwapModule = (() => {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ jsonrpc:'2.0', id:1, method, params })
     });
-    return (await res.json()).result;
+    let data;
+    try { data = await res.json(); } catch (e) { throw new Error('RPC returned an unreadable response'); }
+    // Surface proxy and RPC errors instead of returning undefined, which
+    // used to make a dead RPC look like a zero balance.
+    if (!res.ok || data.error) {
+      const msg = typeof data.error === 'string' ? data.error : data.error?.message;
+      throw new Error(msg || `RPC ${method} failed (HTTP ${res.status})`);
+    }
+    return data.result;
   }
 
   async function loadBalances() {
@@ -505,10 +513,12 @@ const VeilSwapModule = (() => {
     if (list) list.innerHTML = '<div class="balance-item"><span class="balance-token">Loading...</span></div>';
 
     const rows = [];
+    let failures = 0;
     try {
       const r = await rpcCall('getBalance', [walletPubkey]);
       rows.push({ sym: 'SOL', bal: (r.value / 1e9).toFixed(4) });
     } catch (e) {
+      failures += 1;
       rows.push({ sym: 'SOL', bal: '-' });
     }
     for (const [sym, tok] of Object.entries(SWAP_TOKENS)) {
@@ -518,8 +528,14 @@ const VeilSwapModule = (() => {
         const bal = r?.value?.length > 0 ? r.value[0].account.data.parsed.info.tokenAmount.uiAmountString : '0';
         rows.push({ sym, bal });
       } catch (e) {
+        failures += 1;
         rows.push({ sym, bal: '-' });
       }
+    }
+
+    if (list && failures === rows.length) {
+      list.innerHTML = '<div class="balance-item"><span class="balance-token">Balances unavailable right now, the mainnet RPC did not respond. Try again shortly.</span></div>';
+      return;
     }
 
     if (list) {
