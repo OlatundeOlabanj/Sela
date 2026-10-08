@@ -66,7 +66,14 @@ const VeilEngine = (() => {
   // rather than silently accepted and failing later.
   async function _submitDevnet(signedTxBase64) {
     try {
-      await _rpc('sendTransaction', [signedTxBase64, { encoding: 'base64', skipPreflight: false }], 'devnet');
+      // preflightCommitment must match the commitment the blockhash was
+      // fetched at ('confirmed', see _signAndSubmitWithRetry). Left unset
+      // it defaults to 'finalized', and a blockhash fetched at confirmed
+      // is by definition newer than the latest finalized slot, so the
+      // simulating node reports "Blockhash not found" for a perfectly
+      // valid transaction. That was the actual cause of goal creation
+      // failing with that error, not RPC flakiness.
+      await _rpc('sendTransaction', [signedTxBase64, { encoding: 'base64', skipPreflight: false, preflightCommitment: 'confirmed' }], 'devnet');
       return { success: true, usedFallback: false };
     } catch (err) {
       return { success: false, error: err.message };
@@ -285,6 +292,24 @@ const VeilEngine = (() => {
 
       if (!submission.success) {
         lastError = submission.error || 'Submission failed';
+
+        // "Blockhash not found" (or "blockhash expired") at the
+        // simulation stage is a mechanical condition, not a judgment
+        // call: it means the blockhash fetched above is already stale
+        // relative to whichever node answered, and the only fix is a
+        // fresh one. No transaction was broadcast (simulation failed
+        // before that), so there's no risk of a duplicate, and no
+        // reason to spend an AI call or a tip-escalation cycle on
+        // something with one obvious answer. This also matters
+        // specifically on devnet, where the public RPC's own nodes can
+        // disagree with each other moment to moment under load, this
+        // case was previously routed through reasonAboutFailure mislabeled
+        // as a mainnet 'BundleExecutionFailure', which it never was.
+        if (/blockhash/i.test(lastError) && attempt <= MAX_RETRIES) {
+          await new Promise((r) => setTimeout(r, 1500)); // let nodes catch up before the next fresh blockhash
+          continue;
+        }
+
         const decision = await SmartTX.reasonAboutFailure(
           { signature, failure_type: 'BundleExecutionFailure', retry_count: attempt - 1, tip_paid_lamports: tipLamports },
           { congestion_level: 'UNKNOWN', recent_avg_confirmation_ms: null, recent_failure_rate: 0.1 },

@@ -38,6 +38,16 @@ const GoalsTab = (() => {
 
   function _web3() { return window.solanaWeb3; }
 
+  // Every show/hide in this file goes through here. An unguarded
+  // el.style.display on a missing element throws, and when that happens
+  // partway through a render function the rest of the function never
+  // runs, leaving the screen half-updated (header says connected, body
+  // still says welcome). A missing element is skipped, not fatal.
+  function _show(id, visible) {
+    const el = typeof id === 'string' ? document.getElementById(id) : id;
+    if (el) el.style.display = visible ? '' : 'none';
+  }
+
   function _getConnection() {
     if (connectionCache) return connectionCache;
     const cfg = window.SELA_CONFIG;
@@ -255,12 +265,12 @@ const GoalsTab = (() => {
     const connectedEl = document.getElementById('homeConnected');
 
     if (!wallet?.publicKey) {
-      welcomeEl.style.display = '';
-      connectedEl.style.display = 'none';
+      _show(welcomeEl, true);
+      _show(connectedEl, false);
       return;
     }
-    welcomeEl.style.display = 'none';
-    connectedEl.style.display = '';
+    _show(welcomeEl, false);
+    _show(connectedEl, true);
 
     const amountEl = document.getElementById('heroBalanceAmount');
     const unitEl = document.getElementById('heroBalanceUnit');
@@ -308,12 +318,12 @@ const GoalsTab = (() => {
         <div><div class="activity-row-title">${partnerSet ? (pointer.deviceRole === 1 ? 'You (Member)' : 'Member') : 'No member yet'}</div></div>
       </div>`;
 
-    document.getElementById('inviteBtn').style.display = (isGuardian && !partnerSet) ? '' : 'none';
-    document.getElementById('inviteFull').style.display = (isGuardian && partnerSet) ? '' : 'none';
-    document.getElementById('inviteLinkBox').style.display = 'none';
+    _show('inviteBtn', isGuardian && !partnerSet);
+    _show('inviteFull', isGuardian && partnerSet);
+    _show('inviteLinkBox', false);
 
     const pendingBox = document.getElementById('pendingJoinRequest');
-    pendingBox.style.display = 'none';
+    _show(pendingBox, false);
     if (isGuardian && !partnerSet) {
       try {
         const { pda: rotationPda } = window.CognataProgram.deriveRotationRequestPda(pointer.vaultPda, 1);
@@ -321,7 +331,7 @@ const GoalsTab = (() => {
         if (info) {
           const req = window.CognataProgram.decodeKeyRotationRequest(info.data);
           if (req.status === 'Pending') {
-            pendingBox.style.display = '';
+            _show(pendingBox, true);
             document.getElementById('pendingJoinDevice').textContent =
               'New device key: ' + Array.from(req.newDevicePubkey).map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16) + '\u2026';
           }
@@ -356,7 +366,7 @@ const GoalsTab = (() => {
       lastInviteCode = record.code;
       const link = `${window.location.origin}/join.html?code=${record.code}`;
       document.getElementById('inviteLinkText').value = link;
-      document.getElementById('inviteLinkBox').style.display = '';
+      _show('inviteLinkBox', true);
     } catch (err) {
       window.Cognata.showToast('Could not create invite: ' + err.message, 'red');
     }
@@ -633,12 +643,12 @@ const GoalsTab = (() => {
 
     const pointer = wallet?.publicKey ? _getVaultPointer(wallet.publicKey) : null;
     if (!pointer) {
-      noneEl.style.display = '';
-      activeEl.style.display = 'none';
+      _show(noneEl, true);
+      _show(activeEl, false);
       return;
     }
-    noneEl.style.display = 'none';
-    activeEl.style.display = '';
+    _show(noneEl, false);
+    _show(activeEl, true);
     document.getElementById('youPasskeyRole').textContent = pointer.deviceRole === 0 ? 'Owner' : 'Member';
   }
 

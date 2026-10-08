@@ -1224,20 +1224,30 @@
       return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
     }
 
+    // Null-safe DOM helpers for applyWalletConnected. This function ends
+    // by dispatching sela:wallet-connected, which is what makes Home,
+    // Goals and You re-render. One missing element used to throw here and
+    // skip that dispatch, leaving the header saying connected while Home
+    // still showed the welcome card (heroConnectBtn was deleted from the
+    // markup but this line was not, that was the whole bug).
+    function setText(id, value) { const el = document.getElementById(id); if (el) el.textContent = value; }
+    function setDisplay(id, value) { const el = document.getElementById(id); if (el) el.style.display = value; }
+
     function applyWalletConnected(wallet) {
       const truncated = wallet.truncated || Cognata.truncateWallet(wallet.publicKey);
-      document.getElementById('appGreetingLabel').textContent = greetingForNow();
-      document.getElementById('appGreetingName').textContent = truncated;
-      document.getElementById('appAvatarBtn').textContent = (wallet.walletName || 'W')[0].toUpperCase();
-      document.getElementById('youWalletConnected').style.display = '';
-      document.getElementById('youWalletDisconnected').style.display = 'none';
-      document.getElementById('youWalletAddress').textContent = wallet.publicKey;
-      document.getElementById('heroConnectBtn').style.display = 'none';
-      document.getElementById('recipientWallet').value = wallet.publicKey;
-      document.getElementById('invoiceForm').classList.remove('form-disabled');
-      document.getElementById('connectPrompt').style.display = 'none';
-      document.getElementById('walletStrip').style.display = 'flex';
-      document.getElementById('walletStripAddr').textContent = wallet.truncated || Cognata.truncateWallet(wallet.publicKey);
+      setText('appGreetingLabel', greetingForNow());
+      setText('appGreetingName', truncated);
+      setText('appAvatarBtn', (wallet.walletName || 'W')[0].toUpperCase());
+      setDisplay('youWalletConnected', '');
+      setDisplay('youWalletDisconnected', 'none');
+      setText('youWalletAddress', wallet.publicKey);
+      const recipient = document.getElementById('recipientWallet');
+      if (recipient) recipient.value = wallet.publicKey;
+      const invoiceForm = document.getElementById('invoiceForm');
+      if (invoiceForm) invoiceForm.classList.remove('form-disabled');
+      setDisplay('connectPrompt', 'none');
+      setDisplay('walletStrip', 'flex');
+      setText('walletStripAddr', truncated);
 
       if (window.VeilSwap) {
         VeilSwap.syncWallet(wallet.publicKey);
