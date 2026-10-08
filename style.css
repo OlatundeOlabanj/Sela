@@ -327,3 +327,42 @@ footer .container { display: flex; align-items: center; justify-content: space-b
 
 .app-view { display: none; }
 .app-view.active { display: block; }
+
+/* ── Desktop layout (dashboard.html) ──
+   Phones and tablets keep the single mobile column above. From 1024px
+   up the same markup becomes a sidebar app: the bottom tab bar turns
+   into a left sidebar, the shell widens, Home splits into two columns
+   and the other views get a readable line length. Everything below is
+   inside this one query on purpose, so nothing here can reach a
+   narrower screen. */
+@media (min-width: 1024px) {
+  body:has(.app-shell) { background: var(--bg); padding-left: 232px; }
+  .app-shell { max-width: 1080px; padding: 0 2.5rem 3rem; background: transparent; border-left: none; border-right: none; box-shadow: none; }
+  .app-header { padding: 2rem 0 1.25rem; }
+
+  /* Tab bar becomes the sidebar. */
+  .bottom-tab-bar { top: 0; bottom: 0; right: auto; width: 232px; max-width: none; flex-direction: column; justify-content: flex-start; border-top: none; border-right: 1px solid var(--border); padding: 1.5rem 0.9rem; overflow-y: auto; }
+  .bottom-tab-bar::before { content: 'Sela'; display: block; font-family: var(--font-body); font-weight: 700; font-size: 1.6rem; letter-spacing: -0.02em; color: var(--accent); padding: 0.25rem 0.9rem 1.5rem; }
+  .bottom-tab-bar-inner { flex-direction: column; max-width: none; gap: 0.25rem; }
+  .bottom-tab-btn { flex: 0 0 auto; flex-direction: row; justify-content: flex-start; gap: 0.8rem; padding: 0.75rem 0.9rem; border-radius: var(--radius); transition: background var(--transition), color var(--transition); }
+  .bottom-tab-btn:hover { background: var(--bg-card); color: var(--text); }
+  .bottom-tab-btn.active { background: var(--accent-dim); color: var(--accent); }
+  .bottom-tab-btn-label { font-size: var(--text-sm); font-weight: 500; }
+
+  /* Home: two columns. Balance, actions and goals on the left, the
+     weekly chart and recent activity on the right. The break is keyed
+     to the weekly chart's own header, not a child position, so
+     reordering the markup does not silently move it. */
+  #homeConnected { column-count: 2; column-gap: 2rem; }
+  #homeConnected > * { break-inside: avoid; }
+  #homeConnected > .app-section-header:has(+ #weekChartCard) { break-before: column; margin-top: 0; }
+  .goal-ring-row { flex-wrap: wrap; overflow: visible; }
+
+  /* Signed-out welcome card: a centered card instead of a 900px bar. */
+  #homeWelcome { max-width: 520px; margin: 3rem auto 0; }
+  #homeWelcome .pane-note { margin-left: auto; margin-right: auto; }
+
+  /* Every other view: a readable, centered width instead of stretching
+     across the whole shell. */
+  .app-view:not(#view-home) { max-width: 760px; margin-left: auto; margin-right: auto; }
+}
