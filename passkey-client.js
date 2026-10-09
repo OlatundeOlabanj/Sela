@@ -33,6 +33,33 @@ const PasskeyClient = (() => {
     return window.solanaWeb3;
   }
 
+  // Wallet apps (Phantom among them) open sites in an embedded WebView,
+  // and embedded WebViews generally don't expose WebAuthn unless the
+  // host app wires it up (iOS WKWebView needs the host app's associated
+  // domains entitlement, Android System WebView needs an opt-in
+  // Credential Manager bridge). Safari and Chrome do support it, so the
+  // fix for a user in that situation is "open this page in your normal
+  // browser", which is what these messages say.
+  const BROWSER_HINT = "Passkeys aren't available in this browser. This usually happens inside a wallet app's built-in browser. Open this page in Safari or Chrome instead.";
+
+  function checkSupport() {
+    const ok = !!(window.PublicKeyCredential && navigator.credentials && typeof navigator.credentials.create === 'function');
+    return ok ? { ok: true } : { ok: false, reason: BROWSER_HINT };
+  }
+
+  // NotAllowedError is what WebAuthn throws both when the user cancels
+  // and when an embedded browser refuses the request outright, the two
+  // are indistinguishable from here, so the message covers both.
+  function _friendlyError(err) {
+    if (err && err.name === 'NotAllowedError') {
+      return new Error("The passkey prompt was cancelled or isn't available here. If you're inside a wallet app's built-in browser, open this page in Safari or Chrome instead.");
+    }
+    if (err && err.name === 'SecurityError') {
+      return new Error("Passkeys can't be used on this web address. Open Sela from its normal link (" + window.location.hostname + ") in Safari or Chrome.");
+    }
+    return err;
+  }
+
   function _b64urlToBytes(b64url) {
     const b64 = b64url.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(b64url.length / 4) * 4, '=');
     const bin = atob(b64);
@@ -128,13 +155,15 @@ const PasskeyClient = (() => {
    * caller knows the vault's address, see rememberCredentialForVault).
    */
   async function registerPasskey({ label }) {
-    if (!window.PublicKeyCredential || !('create' in navigator.credentials)) {
-      throw new Error('WebAuthn is not available in this browser.');
-    }
     const challenge = crypto.getRandomValues(new Uint8Array(32));
     const userId = crypto.getRandomValues(new Uint8Array(16));
 
-    const credential = await navigator.credentials.create({
+    const support = checkSupport();
+    if (!support.ok) throw new Error(support.reason);
+
+    let credential;
+    try {
+      credential = await navigator.credentials.create({
       publicKey: {
         challenge,
         rp: { name: 'Sela', id: window.location.hostname },
@@ -144,7 +173,10 @@ const PasskeyClient = (() => {
         timeout: 60000,
         attestation: 'none',
       },
-    });
+      });
+    } catch (err) {
+      throw _friendlyError(err);
+    }
 
     if (typeof credential.response.getPublicKey !== 'function') {
       throw new Error('This browser does not support getPublicKey() on WebAuthn credentials, cannot extract the passkey public key. Use a recent Chrome, Edge, Firefox, or Safari 16.4+.');
@@ -227,14 +259,22 @@ const PasskeyClient = (() => {
     parts.push(material.prefix);
     const challenge = await _sha256(_concat(parts));
 
-    const assertion = await navigator.credentials.get({
+    const support = checkSupport();
+    if (!support.ok) throw new Error(support.reason);
+
+    let assertion;
+    try {
+      assertion = await navigator.credentials.get({
       publicKey: {
         challenge,
         allowCredentials: [{ type: 'public-key', id: credentialId }],
         userVerification: 'required',
         timeout: 60000,
       },
-    });
+      });
+    } catch (err) {
+      throw _friendlyError(err);
+    }
 
     const authenticatorData = new Uint8Array(assertion.response.authenticatorData);
     const clientDataJson = new Uint8Array(assertion.response.clientDataJSON);
@@ -254,6 +294,7 @@ const PasskeyClient = (() => {
   }
 
   return {
+    checkSupport,
     registerPasskey,
     rememberCredentialForVault,
     getStoredCredentialId,

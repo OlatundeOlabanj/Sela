@@ -67,6 +67,7 @@
             <p class="join-step">You've been invited to join as a contributing member. You'll register your own passkey, nothing is shared from the other device.</p>
             <button class="btn btn-primary btn-full" id="connectBtn" onclick="handleConnect()">Connect Wallet</button>
             <button class="btn btn-primary btn-full" id="joinBtn" onclick="handleJoin()" style="display:none;">Register Passkey &amp; Request to Join</button>
+            <p class="join-step" id="supportWarning" style="display:none;margin:1rem 0 0;color:var(--accent);"></p>
           </div>
 
           <div id="stateSent" style="display:none;">
@@ -132,6 +133,12 @@
         invite = await res.json();
         document.getElementById('readyVaultName').textContent = invite.vaultName;
         showState('stateReady');
+        const support = PasskeyClient.checkSupport();
+        if (!support.ok) {
+          const warn = document.getElementById('supportWarning');
+          warn.textContent = support.reason;
+          warn.style.display = '';
+        }
       } catch (err) {
         document.getElementById('invalidReason').textContent = 'Could not reach the server. Check your connection and reload.';
         showState('stateInvalid');

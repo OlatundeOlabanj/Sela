@@ -518,6 +518,27 @@ const VeilEngine = (() => {
     });
   }
 
+  /**
+   * Submits an arbitrary list of instructions as one transaction on the
+   * program's cluster (devnet today), through the same retry core as
+   * everything else. Used for funding a holding account, which is a
+   * plain create-account plus SPL transfer. cluster is passed explicitly
+   * on purpose: the retry core defaults to mainnet and the Jito path,
+   * which is wrong for anything touching the Sela program.
+   */
+  async function submitInstructions({ payerWallet, instructions, onProgress }) {
+    return _signAndSubmitWithRetry({
+      payerWallet,
+      onProgress,
+      cluster: window.SELA_CONFIG.PROGRAM_CLUSTER,
+      buildTransaction: async () => {
+        const tx = new window.solanaWeb3.Transaction();
+        for (const ix of instructions) tx.add(ix);
+        return { transaction: tx };
+      },
+    });
+  }
+
   /** New member joining an existing vault: signed by their own wallet,
    * not the owner's, see program-client.js buildRequestKeyRotationInstruction. */
   async function requestJoinVault({ payerWallet, instruction, onProgress }) {
@@ -545,6 +566,7 @@ const VeilEngine = (() => {
     executePrivatePayment,
     createGoal,
     addGoalToVault,
+    submitInstructions,
     requestJoinVault,
     approveJoinRequest,
     contributeToGoal,

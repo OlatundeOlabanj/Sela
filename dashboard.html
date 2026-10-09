@@ -421,8 +421,34 @@
             <div class="stat-value accent" id="goalCurrentAmount" style="font-size:var(--text-lg);">Loading&hellip;</div>
             <div class="pane-note" style="margin-top:0.25rem;">of <span id="goalTargetAmount">-</span> USDC target</div>
           </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+            <div>
+              <div class="activity-row-sub" style="margin:0;">Available to contribute</div>
+              <div class="activity-row-title" id="goalHoldingBalance">Checking&hellip;</div>
+            </div>
+            <button class="app-section-link" onclick="GoalsTab.showGoalDepositForm()">Add funds</button>
+          </div>
           <button class="btn btn-primary btn-full" onclick="GoalsTab.showGoalContributeForm()">Contribute</button>
           <button class="btn btn-ghost btn-full" style="margin-top:0.5rem;" onclick="GoalsTab.showGoalWithdrawForm()">Withdraw</button>
+        </div>
+
+        <!-- Add funds: moves USDC into this device's Sela balance, the account contributions are paid from -->
+        <div id="goalsDepositForm" class="card" style="display:none;">
+          <div class="card-header"><span class="panel-title">Add funds</span></div>
+          <p class="pane-note" style="margin-bottom:1rem;">Contributions are paid from your Sela balance, not straight from a wallet. Add USDC here first, then approve each contribution with your passkey.</p>
+          <div class="form-group">
+            <label class="form-label">Amount (USDC)</label>
+            <input type="number" id="depositAmount" class="form-input" placeholder="25" min="0.01" step="0.01">
+          </div>
+          <button class="btn btn-primary btn-full" id="goalDepositBtn" onclick="GoalsTab.handleDeposit()">Add from connected wallet</button>
+          <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border);">
+            <div class="pane-note" style="margin-bottom:0.4rem;">Or send USDC to this address from any wallet or exchange:</div>
+            <div style="display:flex;gap:0.5rem;min-width:0;">
+              <input type="text" id="holdingAddressText" class="form-input" readonly style="font-family:var(--font-mono);font-size:var(--text-xs);min-width:0;flex:1 1 auto;">
+              <button class="btn btn-ghost btn-sm" style="flex:0 0 auto;" onclick="GoalsTab.copyHoldingAddress()">Copy</button>
+            </div>
+          </div>
+          <button class="btn btn-ghost btn-full" style="margin-top:1rem;" onclick="GoalsTab.hideGoalForms()">Back</button>
         </div>
 
         <!-- Contribute form -->

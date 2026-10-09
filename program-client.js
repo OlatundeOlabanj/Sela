@@ -468,6 +468,63 @@ const CognataProgram = (() => {
     };
   }
 
+  /**
+   * The account contributions are actually paid FROM. Not the user's
+   * own wallet: contribute() moves funds with a CPI signed by the
+   * wallet_authority PDA, and the token program only accepts that if
+   * the source token account is owned by that same PDA. So each device
+   * has a "holding" associated token account owned by its
+   * wallet_authority PDA, funds go in there first (deposit), and the
+   * passkey then authorizes moving them from there into the goal.
+   * Passing a normal wallet's token account as the contribute source is
+   * rejected by the token program with an owner mismatch.
+   */
+  function holdingAccountFor(vaultPda, deviceRole, mint) {
+    const { pda: owner } = deriveWalletAuthorityPda(vaultPda, deviceRole);
+    return { owner, ata: getAssociatedTokenAddress(owner, mint) };
+  }
+
+  /**
+   * Instructions to move USDC from a normal wallet's token account into
+   * the device's holding account (creating it first if needed, the
+   * idempotent create is a no-op when it already exists). `payer` is
+   * the wallet that owns sourceTokenAccount, it signs the transfer.
+   * Plain SPL, nothing here touches the Sela program, so it works from
+   * any wallet or exchange withdrawal too, the destination address is
+   * all anyone needs.
+   */
+  function buildDepositInstructions({ payer, vaultPda, deviceRole, mint, sourceTokenAccount, amountBaseUnits, decimals }) {
+    const web3 = _web3();
+    const ASSOCIATED_TOKEN_PROGRAM_ID = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL';
+    const { owner, ata } = holdingAccountFor(vaultPda, deviceRole, mint);
+
+    const createAta = new web3.TransactionInstruction({
+      programId: new web3.PublicKey(ASSOCIATED_TOKEN_PROGRAM_ID),
+      keys: [
+        _meta(payer, true, true),
+        _meta(ata, false, true),
+        _meta(owner, false, false),
+        _meta(mint, false, false),
+        _meta(web3.SystemProgram.programId, false, false),
+        _meta(TOKEN_PROGRAM_ID, false, false),
+      ],
+      data: new Uint8Array([1]), // CreateIdempotent
+    });
+
+    const transfer = new web3.TransactionInstruction({
+      programId: new web3.PublicKey(TOKEN_PROGRAM_ID),
+      keys: [
+        _meta(sourceTokenAccount, false, true),
+        _meta(mint, false, false),
+        _meta(ata, false, true),
+        _meta(payer, true, false),
+      ],
+      data: _concat([new Uint8Array([12]), _u64LE(amountBaseUnits), _u8(decimals)]), // TransferChecked
+    });
+
+    return { instructions: [createAta, transfer], holdingAta: ata };
+  }
+
   function deriveRotationRequestPda(vaultPda, deviceRole) {
     const web3 = _web3();
     const [pda, bump] = web3.PublicKey.findProgramAddressSync(
@@ -554,6 +611,8 @@ const CognataProgram = (() => {
     deriveWalletAuthorityPda,
     deriveDelegatePda,
     deriveRotationRequestPda,
+    holdingAccountFor,
+    buildDepositInstructions,
     buildRequestKeyRotationInstruction,
     buildApproveKeyRotationInstruction,
     decodeKeyRotationRequest,

@@ -407,7 +407,7 @@ const GoalsTab = (() => {
   let currentGoalsList = [];
 
   function _showOnly(id) {
-    ['goalsNotDeployed', 'goalsLoading', 'goalsNeedWallet', 'goalsListWrap', 'goalsEmpty', 'goalsCreateForm', 'goalsActive', 'goalsContributeForm', 'goalsWithdrawForm']
+    ['goalsNotDeployed', 'goalsLoading', 'goalsNeedWallet', 'goalsListWrap', 'goalsEmpty', 'goalsCreateForm', 'goalsActive', 'goalsDepositForm', 'goalsContributeForm', 'goalsWithdrawForm']
       .forEach((x) => { const el = document.getElementById(x); if (el) el.style.display = x === id ? '' : 'none'; });
   }
 
@@ -442,6 +442,7 @@ const GoalsTab = (() => {
     document.getElementById('goalCurrentAmount').textContent = _fmt(selectedGoal.currentAmount) + ' USDC' + (selectedGoal.status !== 'Active' ? ` (${selectedGoal.status})` : '');
     document.getElementById('goalCurrentAmount').classList.toggle('accent', selectedGoal.currentAmount > 0n);
     document.getElementById('goalTargetAmount').textContent = _fmt(selectedGoal.targetAmount);
+    _refreshHoldingBalance();
   }
 
   function closeGoalDetail() { selectedGoal = null; refreshGoalsView(); }
@@ -528,6 +529,97 @@ const GoalsTab = (() => {
     btn.innerHTML = 'Create Goal';
   }
 
+  // ---- Holding account: where contributions are actually paid from ----
+  // contribute() moves funds with a CPI signed by this device's
+  // wallet_authority PDA, so the source has to be a token account OWNED
+  // BY THAT PDA, not the user's own wallet account (the token program
+  // rejects that with an owner mismatch). Funds are added to it first
+  // (see handleDeposit), the passkey then authorizes moving them on.
+  function _holdingFor(pointer, mintStr) {
+    return window.CognataProgram.holdingAccountFor(pointer.vaultPda, pointer.deviceRole, mintStr);
+  }
+
+  /** null = account never created, undefined = couldn't read it, bigint = real balance */
+  async function _holdingBalance(pointer, mintStr) {
+    const { ata } = _holdingFor(pointer, mintStr);
+    try {
+      const conn = _getConnection();
+      const info = await conn.getAccountInfo(ata);
+      if (!info) return null;
+      const bal = await conn.getTokenAccountBalance(ata);
+      return BigInt(bal.value.amount);
+    } catch (err) {
+      console.error('[Goals] holding balance read failed:', err.message);
+      return undefined;
+    }
+  }
+
+  async function _refreshHoldingBalance() {
+    const el = document.getElementById('goalHoldingBalance');
+    if (!el || !selectedGoal) return;
+    const wallet = window.Cognata?.WalletState?.get();
+    const pointer = wallet?.publicKey ? _getVaultPointer(wallet.publicKey) : null;
+    if (!pointer) { el.textContent = '-'; return; }
+    el.textContent = 'Checking\u2026';
+    const bal = await _holdingBalance(pointer, selectedGoal.mint.toBase58());
+    el.textContent = bal === null ? 'No funds added yet' : bal === undefined ? 'Could not load' : _fmt(bal) + ' USDC';
+  }
+
+  function showGoalDepositForm() {
+    const wallet = window.Cognata?.WalletState?.get();
+    const pointer = wallet?.publicKey ? _getVaultPointer(wallet.publicKey) : null;
+    if (selectedGoal && pointer) {
+      const { ata } = _holdingFor(pointer, selectedGoal.mint.toBase58());
+      const addr = document.getElementById('holdingAddressText');
+      if (addr) addr.value = ata.toBase58();
+    }
+    _showOnly('goalsDepositForm');
+  }
+
+  function copyHoldingAddress() {
+    const input = document.getElementById('holdingAddressText');
+    if (!input) return;
+    input.select();
+    navigator.clipboard?.writeText(input.value);
+    window.Cognata.showToast('Address copied.', 'green');
+  }
+
+  async function handleDeposit() {
+    if (!selectedGoal) return window.Cognata.showToast('No goal selected.', 'red');
+    const amount = parseFloat(document.getElementById('depositAmount').value.trim());
+    if (!amount || amount <= 0) return window.Cognata.showToast('Enter an amount above 0.', 'red');
+
+    const wallet = window.Cognata.WalletState.get();
+    if (!wallet?.publicKey) return window.Cognata.showToast('Connect your wallet first.', 'red');
+    const pointer = _getVaultPointer(wallet.publicKey);
+    if (!pointer) return window.Cognata.showToast('No vault found for this wallet.', 'red');
+
+    const btn = document.getElementById('goalDepositBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner" style="width:15px;height:15px;"></span> Adding funds\u2026';
+    try {
+      const decimals = _decimals();
+      const mint = selectedGoal.mint.toBase58();
+      const sourceTokenAccount = await _getTokenAccountForWallet(wallet.publicKey, mint);
+      const sourceInfo = await _getConnection().getAccountInfo(sourceTokenAccount);
+      if (!sourceInfo) throw new Error('This wallet has no USDC on ' + window.SELA_CONFIG.PROGRAM_CLUSTER + ' to add.');
+
+      const { instructions } = window.CognataProgram.buildDepositInstructions({
+        payer: wallet.publicKey, vaultPda: pointer.vaultPda, deviceRole: pointer.deviceRole, mint,
+        sourceTokenAccount, amountBaseUnits: BigInt(Math.round(amount * 10 ** decimals)), decimals,
+      });
+      await window.VeilEngine.submitInstructions({ payerWallet: wallet.publicKey, instructions });
+
+      window.Cognata.showToast('Funds added.', 'green');
+      document.getElementById('depositAmount').value = '';
+      hideGoalForms();
+    } catch (err) {
+      window.Cognata.showToast('Could not add funds: ' + (err.message || 'Unknown error'), 'red');
+    }
+    btn.disabled = false;
+    btn.innerHTML = 'Add from connected wallet';
+  }
+
   // ---- Contribute / withdraw (against selectedGoal) ----
   function showGoalContributeForm() { _showOnly('goalsContributeForm'); }
   function showGoalWithdrawForm() { _showOnly('goalsWithdrawForm'); }
@@ -552,8 +644,15 @@ const GoalsTab = (() => {
 
     try {
       const decimals = _decimals();
-      const contributorTokenAccount = await _getTokenAccountForWallet(wallet.publicKey, selectedGoal.mint.toBase58());
+      const mintStr = selectedGoal.mint.toBase58();
+      // Paid from the PDA-owned holding account, see _holdingFor above.
+      const contributorTokenAccount = _holdingFor(pointer, mintStr).ata;
       const amountBaseUnits = BigInt(Math.round(amount * 10 ** decimals));
+
+      const available = await _holdingBalance(pointer, mintStr);
+      if (available === null || (available !== undefined && available < amountBaseUnits)) {
+        throw new Error('Not enough in your Sela balance. Tap Add funds first.');
+      }
 
       await window.VeilEngine.contributeToGoal({
         payerWallet: wallet.publicKey,
@@ -672,6 +771,7 @@ const GoalsTab = (() => {
     showGoalContributeForm, showGoalWithdrawForm, hideGoalForms,
     handleContribute, handleWithdraw,
     handleCreateInvite, copyInviteLink, handleApproveJoin,
+    showGoalDepositForm, handleDeposit, copyHoldingAddress,
   };
 })();
 
