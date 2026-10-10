@@ -120,11 +120,18 @@ const VeilEngine = (() => {
     }
   }
 
-  /** Waits for a signature to confirm, polling getSignatureStatuses. */
-  async function _waitForConfirmation(signature) {
+  /**
+   * Waits for a signature to confirm, polling getSignatureStatuses.
+   * `cluster` MUST match the cluster the transaction was submitted to.
+   * It defaulted to mainnet, so a devnet transaction was being looked up
+   * on mainnet, where it can never be found (and where the RPC was
+   * failing, surfacing as 'RPC getSignatureStatuses failed' right after
+   * a successful on-chain submit).
+   */
+  async function _waitForConfirmation(signature, cluster = 'mainnet-beta') {
     const start = Date.now();
     while (Date.now() - start < CONFIRM_TIMEOUT_MS) {
-      const result = await _rpc('getSignatureStatuses', [[signature], { searchTransactionHistory: true }]);
+      const result = await _rpc('getSignatureStatuses', [[signature], { searchTransactionHistory: true }], cluster);
       const status = result?.value?.[0];
       if (status) {
         if (status.err) return { confirmed: false, failed: true, err: status.err };
@@ -146,17 +153,17 @@ const VeilEngine = (() => {
    * signature itself confirms in the meantime, in which case we report
    * that as a real success instead of retrying).
    */
-  async function _waitForSafeRetry(signature, blockhash) {
+  async function _waitForSafeRetry(signature, blockhash, cluster = 'mainnet-beta') {
     const start = Date.now();
     const SAFE_RETRY_TIMEOUT_MS = 90_000; // generous, blockhashes expire well within this
     while (Date.now() - start < SAFE_RETRY_TIMEOUT_MS) {
       // Did it actually land while we were waiting? Don't retry, it succeeded.
-      const statusResult = await _rpc('getSignatureStatuses', [[signature], { searchTransactionHistory: true }]);
+      const statusResult = await _rpc('getSignatureStatuses', [[signature], { searchTransactionHistory: true }], cluster);
       const status = statusResult?.value?.[0];
       if (status && !status.err && (status.confirmationStatus === 'confirmed' || status.confirmationStatus === 'finalized')) {
         return { landedLate: true };
       }
-      const validResult = await _rpc('isBlockhashValid', [blockhash, { commitment: 'confirmed' }]);
+      const validResult = await _rpc('isBlockhashValid', [blockhash, { commitment: 'confirmed' }], cluster);
       const stillValid = validResult?.value ?? validResult;
       if (!stillValid) {
         // Blockhash is expired, so the original transaction can now never land. Safe to retry.
@@ -318,7 +325,7 @@ const VeilEngine = (() => {
         throw new Error(lastError);
       }
 
-      const outcome = await _waitForConfirmation(signature);
+      const outcome = await _waitForConfirmation(signature, cluster);
       if (outcome.confirmed) {
         return {
           txHash: signature, status: 'confirmed', success: true, simulated: false,
@@ -343,7 +350,7 @@ const VeilEngine = (() => {
       // land. Never submit a second transaction until we're certain the first
       // one can no longer confirm (blockhash expired).
       onProgress?.('transferring'); // stays on the same step, still safeguarding, not a new attempt yet
-      const safety = await _waitForSafeRetry(signature, blockhash);
+      const safety = await _waitForSafeRetry(signature, blockhash, cluster);
       if (safety.landedLate) {
         return {
           txHash: signature, status: 'confirmed', success: true, simulated: false,
