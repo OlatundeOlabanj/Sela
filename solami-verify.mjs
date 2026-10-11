@@ -1,18 +1,21 @@
 // solami-verify.mjs
 //
-// One run that checks the two things the Sela activity feed needs,
-// then saves real Blur messages so the field mapping can be written
-// against real data instead of guesses.
+// Checks the two things the Sela activity feed needs from Solami, then
+// saves real Blur messages so the field mapping can be written against
+// real data instead of guesses.
 //
 //   1. RPC: official SDK, one getSlot call.
 //   2. Blur: connects to the data stream, listens for a short window,
 //      counts messages per event type, notes any dex or pool style
 //      fields, and saves samples to blur-samples.json.
+//      If Blur refuses the connection, this prints the server's own
+//      explanation (status, body, headers) and tries the other places a
+//      key could go, so one run shows what is actually required.
 //
 // Setup (in a fresh folder):
 //   npm init -y
 //   npm install solami ws
-//   export SOLAMI_API_KEY="your Sela Dev key"      (Windows PowerShell: $env:SOLAMI_API_KEY="...")
+//   read -rs -p "Solami key: " SOLAMI_API_KEY && export SOLAMI_API_KEY
 //   node solami-verify.mjs
 //
 // Optional: BLUR_SECONDS=30 to listen longer (default 20).
@@ -28,15 +31,18 @@ import WebSocket from 'ws';
 
 const KEY = process.env.SOLAMI_API_KEY;
 const SECONDS = Number(process.env.BLUR_SECONDS) || 20;
+const BLUR_BASE = process.env.BLUR_BASE || 'wss://ws.solami.dev';
 
 if (!KEY) {
   console.error('Set SOLAMI_API_KEY first, see the setup notes at the top of this file.');
   process.exit(1);
 }
 
+const scrub = (s) => String(s).split(KEY).join('<key>').replace(/api[_-]?key=[^&\s"']+/gi, 'api_key=<redacted>');
+
 function report(label, ok, detail) {
   console.log(`\n[${ok ? 'PASS' : 'FAIL'}] ${label}`);
-  if (detail) console.log('  ' + String(detail).split('\n').join('\n  '));
+  if (detail) console.log('  ' + scrub(detail).split('\n').join('\n  '));
 }
 
 async function checkRpc() {
@@ -53,9 +59,43 @@ function typeOf(msg) {
   return String(msg.type ?? msg.event ?? msg.kind ?? msg.event_type ?? 'unknown');
 }
 
+// Opens one connection and resolves with how it ended. Used for the
+// variations after a rejection. Handshake rejections are not billed.
+function probe(url, headers) {
+  return new Promise((resolve) => {
+    let settled = false;
+    const done = (r) => { if (!settled) { settled = true; try { ws.terminate(); } catch (_) { /* closed */ } resolve(r); } };
+    const ws = new WebSocket(url, { headers });
+    const timer = setTimeout(() => done('no answer in 8s'), 8000);
+    ws.on('open', () => { clearTimeout(timer); done('OPENED'); });
+    ws.on('unexpected-response', (req, res) => {
+      let body = '';
+      res.on('data', (c) => { if (body.length < 300) body += c; });
+      res.on('end', () => { clearTimeout(timer); done(`HTTP ${res.statusCode} ${body.trim().replace(/\s+/g, ' ')}`); });
+    });
+    ws.on('error', (e) => { clearTimeout(timer); done('error: ' + e.message); });
+  });
+}
+
+async function variations() {
+  const k = encodeURIComponent(KEY);
+  const base = `${BLUR_BASE}/data/subscribe`;
+  const tests = [
+    ['key in query as api_key, no chain param', `${base}?api_key=${k}`, {}],
+    ['key in query as api-key', `${base}?chain=solana&api-key=${k}`, {}],
+    ['key in Authorization: Bearer header', `${base}?chain=solana`, { Authorization: `Bearer ${KEY}` }],
+    ['key in x-api-key header', `${base}?chain=solana`, { 'x-api-key': KEY }],
+    ['key in query plus Origin https://solami.dev', `${base}?chain=solana&api_key=${k}`, { Origin: 'https://solami.dev' }],
+  ];
+  console.log('\n  Other ways of presenting the key:');
+  for (const [label, url, headers] of tests) {
+    console.log(`    ${label}: ${scrub(await probe(url, headers))}`);
+  }
+}
+
 function checkBlur() {
   return new Promise((resolve) => {
-    const url = `wss://ws.solami.dev/data/subscribe?chain=solana&api_key=${encodeURIComponent(KEY)}`;
+    const url = `${BLUR_BASE}/data/subscribe?chain=solana&api_key=${encodeURIComponent(KEY)}`;
     const counts = {};
     const samples = {};
     const dexish = {};
@@ -66,13 +106,14 @@ function checkBlur() {
 
     const ws = new WebSocket(url);
 
-    function finish(note) {
+    async function finish(note, rejected) {
       if (done) return;
       done = true;
       try { ws.close(); } catch (_) { /* already closed */ }
 
       if (!opened) {
         report('Blur stream', false, note);
+        if (rejected) await variations();
       } else {
         report('Blur stream', total > 0, `${total} messages in ${SECONDS}s${note ? '\n' + note : ''}`);
         console.log('  event types seen:', Object.keys(counts).length ? JSON.stringify(counts) : '(none)');
@@ -117,21 +158,27 @@ function checkBlur() {
     });
 
     ws.on('unexpected-response', (req, res) => {
-      const code = res.statusCode;
-      finish(`Handshake rejected with HTTP ${code}.` + (code === 403
-        ? ' A plain key should include Blur access, so a 403 here while RPC passes is new information, paste this output back.'
-        : ''));
+      let body = '';
+      res.on('data', (c) => { if (body.length < 800) body += c; });
+      res.on('end', () => {
+        const headers = Object.entries(res.headers)
+          .filter(([k]) => !/set-cookie|authorization/i.test(k))
+          .map(([k, v]) => `    ${k}: ${v}`).join('\n');
+        finish(
+          `Handshake rejected: HTTP ${res.statusCode} ${res.statusMessage || ''}\n` +
+          `  Server said: ${body.trim() || '(empty body)'}\n  Response headers:\n${headers}`,
+          true,
+        );
+      });
     });
 
-    ws.on('error', (err) => {
-      finish('Connection error: ' + String(err.message).replace(/api_key=[^&\s]+/gi, 'api_key=<redacted>'));
-    });
+    ws.on('error', (err) => { finish('Connection error: ' + err.message, false); });
 
     ws.on('close', (code) => {
       if (!done) {
         finish(code === 4002
           ? 'Closed with code 4002: streaming balance exhausted, check Bandwidth in the Solami dashboard.'
-          : `Closed by the server with code ${code}.`);
+          : `Closed by the server with code ${code}.`, false);
       }
     });
   });
