@@ -60,9 +60,12 @@ if (!pool) {
   console.error('No DBC pool found for that base mint on this cluster.');
   process.exit(1);
 }
-const config = await client.state.getPoolConfig(pool.account.config);
+// In this SDK version the pool account wraps everything in poolState,
+// including the config address.
+const poolState = pool.account.poolState;
+const config = await client.state.getPoolConfig(poolState.config);
 
-const reserve = pool.account.poolState.quoteReserve;
+const reserve = poolState.quoteReserve;
 const threshold = config.migrationQuoteThreshold;
 console.log(`Quote reserve ${fmt(reserve)} USDC, migration threshold ${fmt(threshold)} USDC`);
 
