@@ -43,7 +43,7 @@ keys at all. What each key unlocks:
 | `RPC_REGION_LABEL` | Optional text for the health pill, for example `Frankfurt`. |
 | `DEVNET_RPC_URL` | Optional. Defaults to the public devnet endpoint, which is enough for goals. |
 | `ACTIVITY_SOURCE` | `mock` (default, clearly labelled in the UI) or `solami` for live data. |
-| `SOLAMI_API_KEY` | Live activity feed from Solami. Used only on the server. |
+| `SOLAMI_API_KEY` | Live activity feed from Solami. Must be a key with the DataApi permission ticked when you create it. Used only on the server. |
 | `SOLAMI_ACTIVITY_TYPES`, `SOLAMI_ACTIVITY_ADDRESS`, `SOLAMI_POLL_WINDOW_MS` | Optional feed filters and listening window. |
 | `GROQ_API_KEY` | The AI retry agent for payments. |
 | `HELIUS_API_KEY` | Legacy fallback if `RPC_HTTP_URL` is not set. |

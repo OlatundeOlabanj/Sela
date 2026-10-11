@@ -19,6 +19,9 @@
 //   node solami-verify.mjs
 //
 // Optional: BLUR_SECONDS=30 to listen longer (default 20).
+// Optional: SOLAMI_RPC_KEY, if the key you use for Blur has no RPC access.
+// Blur needs a key with the DataApi permission (the server says: missing
+// required permission DataApi).
 //
 // The key is read from the environment and is never printed. Do not
 // paste it into chat or commit it.
@@ -30,6 +33,7 @@ import { builder } from 'solami';
 import WebSocket from 'ws';
 
 const KEY = process.env.SOLAMI_API_KEY;
+const RPC_KEY = process.env.SOLAMI_RPC_KEY || KEY; // only needed if your Blur key has no RPC access
 const SECONDS = Number(process.env.BLUR_SECONDS) || 20;
 const BLUR_BASE = process.env.BLUR_BASE || 'wss://ws.solami.dev';
 
@@ -38,7 +42,7 @@ if (!KEY) {
   process.exit(1);
 }
 
-const scrub = (s) => String(s).split(KEY).join('<key>').replace(/api[_-]?key=[^&\s"']+/gi, 'api_key=<redacted>');
+const scrub = (s) => String(s).split(KEY).join('<key>').split(RPC_KEY).join('<key>').replace(/api[_-]?key=[^&\s"']+/gi, 'api_key=<redacted>');
 
 function report(label, ok, detail) {
   console.log(`\n[${ok ? 'PASS' : 'FAIL'}] ${label}`);
@@ -47,7 +51,7 @@ function report(label, ok, detail) {
 
 async function checkRpc() {
   try {
-    const client = await builder().withRpc(KEY).build();
+    const client = await builder().withRpc(RPC_KEY).build();
     const slot = await client.rpc().connection.getSlot();
     report('RPC getSlot', typeof slot === 'number' && slot > 0, `slot = ${slot}`);
   } catch (err) {
