@@ -44,7 +44,9 @@ keys at all. What each key unlocks:
 | `DEVNET_RPC_URL` | Optional. Defaults to the public devnet endpoint, which is enough for goals. |
 | `ACTIVITY_SOURCE` | `mock` (default, clearly labelled in the UI) or `solami` for live data. |
 | `SOLAMI_API_KEY` | Live activity feed from Solami. Must be a key with the DataApi permission ticked when you create it. Used only on the server. |
-| `SOLAMI_ACTIVITY_TYPES`, `SOLAMI_ACTIVITY_ADDRESS`, `SOLAMI_POLL_WINDOW_MS` | Optional feed filters and listening window. |
+| `SOLAMI_ACTIVITY_TYPES` | Event types to show, comma separated. Default `token_create,meme,graduation` (launches, bonding curve progress, graduations). Also `swap`, `liquidity`, `transfer`, `pool_create`. |
+| `SOLAMI_ACTIVITY_DEX`, `SOLAMI_ACTIVITY_ADDRESS` | Optional: only events from these venues or token mints. |
+| `SOLAMI_BACKFILL`, `SOLAMI_CACHE_MS`, `SOLAMI_POLL_WINDOW_MS` | Optional: how many recent events per type to replay on connect (default 10), how long to cache the result (default 20000 ms), how long to listen per refresh (default 3000 ms). |
 | `GROQ_API_KEY` | The AI retry agent for payments. |
 | `HELIUS_API_KEY` | Legacy fallback if `RPC_HTTP_URL` is not set. |
 | `KEEPER_KEYPAIR_JSON` | The keeper that submits recurring allowances. |

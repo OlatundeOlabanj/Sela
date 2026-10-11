@@ -99,7 +99,9 @@ async function variations() {
 
 function checkBlur() {
   return new Promise((resolve) => {
-    const url = `${BLUR_BASE}/data/subscribe?chain=solana&api_key=${encodeURIComponent(KEY)}`;
+    // backfill=3 replays the last 3 events of each type on connect, so samples
+    // of every type arrive within a second instead of waiting for live traffic.
+    const url = `${BLUR_BASE}/data/subscribe?chain=solana&api_key=${encodeURIComponent(KEY)}&backfill=3&metadata=false`;
     const counts = {};
     const samples = {};
     const dexish = {};
@@ -152,7 +154,7 @@ function checkBlur() {
         if (!samples[t]) samples[t] = [];
         if (samples[t].length < 2) samples[t].push(msg);
         for (const [k, v] of Object.entries(msg)) {
-          if (/dex|pool|protocol|program|venue/i.test(k) && typeof v === 'string') {
+          if (/dex|launchpad|pool|protocol|program|venue/i.test(k) && typeof v === 'string') {
             if (!dexish[k]) dexish[k] = new Set();
             dexish[k].add(v);
           }
