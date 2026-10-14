@@ -485,20 +485,17 @@ const CognataProgram = (() => {
   }
 
   /**
-   * Instructions to move USDC from a normal wallet's token account into
-   * the device's holding account (creating it first if needed, the
-   * idempotent create is a no-op when it already exists). `payer` is
-   * the wallet that owns sourceTokenAccount, it signs the transfer.
-   * Plain SPL, nothing here touches the Sela program, so it works from
-   * any wallet or exchange withdrawal too, the destination address is
-   * all anyone needs.
+   * Creates a device's holding account (idempotent, a no-op if it
+   * already exists). `payer` funds the rent and signs. Split out so a
+   * server can create it at vault creation, which means the account
+   * exists from the start and anyone can send USDC straight to its
+   * address (a transfer to a token account that doesn't exist yet fails).
    */
-  function buildDepositInstructions({ payer, vaultPda, deviceRole, mint, sourceTokenAccount, amountBaseUnits, decimals }) {
+  function buildCreateHoldingAccountInstruction({ payer, vaultPda, deviceRole, mint }) {
     const web3 = _web3();
     const ASSOCIATED_TOKEN_PROGRAM_ID = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL';
     const { owner, ata } = holdingAccountFor(vaultPda, deviceRole, mint);
-
-    const createAta = new web3.TransactionInstruction({
+    const instruction = new web3.TransactionInstruction({
       programId: new web3.PublicKey(ASSOCIATED_TOKEN_PROGRAM_ID),
       keys: [
         _meta(payer, true, true),
@@ -510,6 +507,22 @@ const CognataProgram = (() => {
       ],
       data: new Uint8Array([1]), // CreateIdempotent
     });
+    return { instruction, ata };
+  }
+
+  /**
+   * Instructions to move USDC from a normal wallet's token account into
+   * the device's holding account (creating it first if needed, the
+   * idempotent create is a no-op when it already exists). `payer` is
+   * the wallet that owns sourceTokenAccount, it signs the transfer.
+   * Plain SPL, nothing here touches the Sela program, so it works from
+   * any wallet or exchange withdrawal too, the destination address is
+   * all anyone needs.
+   */
+  function buildDepositInstructions({ payer, vaultPda, deviceRole, mint, sourceTokenAccount, amountBaseUnits, decimals }) {
+    const web3 = _web3();
+    const { ata } = holdingAccountFor(vaultPda, deviceRole, mint);
+    const createAta = buildCreateHoldingAccountInstruction({ payer, vaultPda, deviceRole, mint }).instruction;
 
     const transfer = new web3.TransactionInstruction({
       programId: new web3.PublicKey(TOKEN_PROGRAM_ID),
@@ -612,6 +625,7 @@ const CognataProgram = (() => {
     deriveDelegatePda,
     deriveRotationRequestPda,
     holdingAccountFor,
+    buildCreateHoldingAccountInstruction,
     buildDepositInstructions,
     buildRequestKeyRotationInstruction,
     buildApproveKeyRotationInstruction,

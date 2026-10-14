@@ -13,6 +13,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/relay"
+  to = "/.netlify/functions/relay"
+  status = 200
+
+[[redirects]]
   from = "/api/rpc"
   to = "/.netlify/functions/rpc-proxy"
   status = 200

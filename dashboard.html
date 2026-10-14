@@ -265,8 +265,13 @@
           <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
         </div>
         <div style="font-size:var(--text-md);font-weight:700;color:var(--text);margin-bottom:0.5rem;">Welcome to Sela</div>
-        <p class="pane-note" style="margin-bottom:1.5rem;">No email, no password to set. Connect a Solana wallet, then your device's own Face ID or fingerprint, a passkey, approves everything from there. That's the whole sign-up.</p>
-        <button class="btn btn-primary btn-full" onclick="handleConnectWallet()">Connect Wallet</button>
+        <p class="pane-note" id="welcomeCopy" style="margin-bottom:1.5rem;">No email, no password to set. Connect a Solana wallet, then your device's own Face ID or fingerprint, a passkey, approves everything from there. That's the whole sign-up.</p>
+        <button class="btn btn-primary btn-full" id="welcomeStartBtn" style="display:none;" onclick="GoalsTab.startPasskeyAccount()">Get Started</button>
+        <button class="btn btn-primary btn-full" id="welcomeWalletBtn" onclick="handleConnectWallet()">Connect Wallet</button>
+        <div id="welcomeSecondary" style="display:none;margin-top:0.9rem;">
+          <div><button class="app-section-link" onclick="GoalsTab.signInWithPasskey()">Already have an account? Sign in with your passkey</button></div>
+          <div style="margin-top:0.5rem;"><button class="app-section-link" onclick="handleConnectWallet()">Use a Solana wallet instead</button></div>
+        </div>
       </div>
 
       <div id="homeConnected">
@@ -362,30 +367,7 @@
           <div class="goal-ring-row" id="goalsRingRow" style="margin-bottom:1.25rem;"></div>
           <button class="btn btn-ghost btn-full" onclick="GoalsTab.showGoalCreateForm()">+ New Goal</button>
 
-          <div class="app-section-header">
-            <span class="app-section-title" style="font-size:var(--text-sm);">Family</span>
-          </div>
-          <div class="card">
-            <div id="familyMemberList" style="margin-bottom:1rem;"></div>
-
-            <!-- Pending join request, only shown to the guardian when one exists -->
-            <div id="pendingJoinRequest" style="display:none;margin-bottom:1rem;padding:0.85rem;background:var(--accent-dim);border:1px solid rgba(245,158,11,0.25);border-radius:var(--radius-sm);">
-              <div style="font-size:var(--text-sm);color:var(--text);font-weight:600;margin-bottom:0.25rem;">Someone wants to join</div>
-              <div class="pane-note" id="pendingJoinDevice" style="margin-bottom:0.75rem;word-break:break-all;"></div>
-              <button class="btn btn-primary btn-full" onclick="GoalsTab.handleApproveJoin()">Approve</button>
-            </div>
-
-            <div id="inviteFull" class="pane-note" style="display:none;">This vault already has its second member. v1 supports one partner per vault.</div>
-
-            <button class="btn btn-ghost btn-full" id="inviteBtn" onclick="GoalsTab.handleCreateInvite()">Invite a Family Member</button>
-            <div id="inviteLinkBox" style="display:none;margin-top:0.75rem;">
-              <div class="pane-note" style="margin-bottom:0.4rem;">Share this link, it works once and expires in 7 days:</div>
-              <div style="display:flex;gap:0.5rem;min-width:0;">
-                <input type="text" id="inviteLinkText" class="form-input" readonly style="font-family:var(--font-mono);font-size:var(--text-xs);min-width:0;flex:1 1 auto;">
-                <button class="btn btn-ghost btn-sm" style="flex:0 0 auto;" onclick="GoalsTab.copyInviteLink()">Copy</button>
-              </div>
-            </div>
-          </div>
+          
         </div>
 
         <!-- No goal yet: one primary action -->
@@ -720,78 +702,9 @@
         </div>
       </div>
 
-    </div>
-
-    <!-- ══════════════ VIEW: Activity ══════════════ -->
-    <div id="view-activity" class="app-view">
-      <div id="activity-feed-mount"></div>
-    </div>
-
-    <!-- ══════════════ VIEW: You (wallet, buy/cash out, recurring invoices) ══════════════ -->
-    <div id="view-you" class="app-view">
-
-      <div class="card" style="margin-bottom:1.25rem;">
-        <div class="card-header"><span class="panel-title">Wallet</span></div>
-        <div id="youWalletConnected" style="display:none;">
-          <p class="pane-note" style="font-family:var(--font-mono);word-break:break-all;margin-bottom:1rem;" id="youWalletAddress">-</p>
-          <button class="btn btn-ghost btn-full" onclick="handleDisconnectWallet()">Disconnect</button>
-        </div>
-        <div id="youWalletDisconnected">
-          <p class="pane-note" style="margin-bottom:1.25rem;">Connect a wallet to use Sela.</p>
-          <button class="btn btn-primary btn-full" onclick="handleConnectWallet()">Connect Wallet</button>
-        </div>
-      </div>
-
-      <div class="card" style="margin-bottom:1.25rem;" id="youPasskeyCard">
-        <div class="card-header"><span class="panel-title">Passkey</span></div>
-        <div id="youPasskeyNone">
-          <p class="pane-note">No passkey registered on this device yet. One gets created automatically the first time you create or join a goal, your browser will prompt you.</p>
-        </div>
-        <div id="youPasskeyActive" style="display:none;">
-          <div class="activity-row" style="border-top:none;padding-top:0;">
-            <span class="activity-icon in"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span>
-            <div>
-              <div class="activity-row-title" id="youPasskeyRole">Owner</div>
-              <div class="activity-row-sub">Registered on this device, approves your contributions and withdrawals</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card" style="margin-bottom:1.25rem;">
-        <div class="card-header"><span class="panel-title">Network</span></div>
-        <div class="cluster-badges" id="clusterBadges" style="padding-top:0;">
-          <span class="cluster-badge cluster-mainnet" title="Payments, swaps and RPC run on Solana mainnet, real money"><span class="cluster-dot"></span>Payments: mainnet</span>
-          <span class="cluster-badge" id="programClusterBadge" title="The Sela program and goal token run on this cluster"><span class="cluster-dot"></span>Program: <span id="programClusterName">devnet</span></span>
-          <span id="rpc-status-mount"></span>
-        </div>
-      </div>
-
-      <div class="app-section-header" style="margin-top:0;">
-        <span class="app-section-title" style="font-size:var(--text-sm);">Recurring invoices</span>
-        <button class="app-section-link" onclick="switchView('subscriptions')">Open</button>
-      </div>
-
-      <div class="card" style="margin-top:1.25rem;">
-        <div class="card-header"><span class="panel-title">About Sela</span></div>
-        <p class="pane-note">Shared savings goals on Solana. No email, no password, your device's passkey approves everything. Payments and swaps run on a live mainnet engine, goals and allowances run on the program linked below.</p>
-        <div style="display:flex;gap:0.75rem;margin-top:1rem;flex-wrap:wrap;">
-          <a href="index.html" class="btn btn-ghost btn-sm">About / Landing Page</a>
-          <a id="youExplorerLink" href="#" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">View Program</a>
-        </div>
-      </div>
-
-      <div style="margin-top:2rem;padding-top:1.25rem;border-top:1px solid var(--border);text-align:center;">
-        <div class="footer-links" style="justify-content:center;margin-bottom:0.5rem;">
-          <a href="privacy.html">Privacy</a>
-          <span class="footer-dot">&middot;</span>
-          <a href="tos.html">Terms</a>
-        </div>
-        <span class="footer-brand">Made by TJS Code</span>
-      </div>
-
-      <!-- ── TAB: Buy / Cash Out (Bitnob on/off-ramp) ── -->
-      <div id="tab-onramp" class="tab-pane" style="margin-top:1.25rem;">
+    
+<!-- ── TAB: Buy / Cash Out (Bitnob on/off-ramp) ── -->
+      <div id="tab-onramp" class="tab-pane" style="margin-top:2rem;">
         <div style="max-width:460px;margin:0 auto 1.25rem;text-align:center;">
           <div class="section-eyebrow" style="margin-bottom:0.4rem;">Naira On/Off-Ramp</div>
           <div style="color:var(--text-muted);font-size: var(--text-sm);">
@@ -872,6 +785,111 @@
           <div class="status-msg" id="onrampStatusMsg"></div>
         </div>
         </div>
+      </div>
+
+    </div>
+
+    <!-- ══════════════ VIEW: Activity ══════════════ -->
+    <div id="view-activity" class="app-view">
+      <div id="activity-feed-mount"></div>
+    </div>
+
+    <!-- ══════════════ VIEW: You (wallet, buy/cash out, recurring invoices) ══════════════ -->
+    <div id="view-you" class="app-view">
+
+      <div class="app-section-header" style="margin-top:0;">
+        <span class="app-section-title">Settings</span>
+      </div>
+
+      <div class="card" style="margin-bottom:1.25rem;">
+        <div class="card-header"><span class="panel-title">Family</span></div>
+        <div class="form-group">
+          <label class="form-label" for="familyNameInput">Family name</label>
+          <input type="text" id="familyNameInput" class="form-input" placeholder="The Jonah family" maxlength="32">
+        </div>
+        <p class="pane-note" style="margin-bottom:1rem;">Saved on this device. Shown in your header and on the invites you send.</p>
+        <button class="btn btn-ghost btn-full" onclick="GoalsTab.saveFamilyName()">Save</button>
+      </div>
+
+      <div class="app-section-header" style="margin-top:0;">
+        <span class="app-section-title" style="font-size:var(--text-sm);">Members</span>
+      </div>
+      <div class="card">
+            <div id="familyMemberList" style="margin-bottom:1rem;"></div>
+
+            <!-- Pending join request, only shown to the guardian when one exists -->
+            <div id="pendingJoinRequest" style="display:none;margin-bottom:1rem;padding:0.85rem;background:var(--accent-dim);border:1px solid rgba(245,158,11,0.25);border-radius:var(--radius-sm);">
+              <div style="font-size:var(--text-sm);color:var(--text);font-weight:600;margin-bottom:0.25rem;">Someone wants to join</div>
+              <div class="pane-note" id="pendingJoinDevice" style="margin-bottom:0.75rem;word-break:break-all;"></div>
+              <button class="btn btn-primary btn-full" onclick="GoalsTab.handleApproveJoin()">Approve</button>
+            </div>
+
+            <div id="inviteFull" class="pane-note" style="display:none;">This vault already has its second member. v1 supports one partner per vault.</div>
+
+            <button class="btn btn-ghost btn-full" id="inviteBtn" onclick="GoalsTab.handleCreateInvite()">Invite a Family Member</button>
+            <div id="inviteLinkBox" style="display:none;margin-top:0.75rem;">
+              <div class="pane-note" style="margin-bottom:0.4rem;">Share this link, it works once and expires in 7 days:</div>
+              <div style="display:flex;gap:0.5rem;min-width:0;">
+                <input type="text" id="inviteLinkText" class="form-input" readonly style="font-family:var(--font-mono);font-size:var(--text-xs);min-width:0;flex:1 1 auto;">
+                <button class="btn btn-ghost btn-sm" style="flex:0 0 auto;" onclick="GoalsTab.copyInviteLink()">Copy</button>
+              </div>
+            </div>
+          </div>
+
+      <div class="card" style="margin:1.25rem 0;" id="youPasskeyCard">
+        <div class="card-header"><span class="panel-title">Passkey</span></div>
+        <div id="youPasskeyNone">
+          <p class="pane-note">No passkey registered on this device yet. One gets created automatically the first time you create or join a goal, your browser will prompt you.</p>
+        </div>
+        <div id="youPasskeyActive" style="display:none;">
+          <div class="activity-row" style="border-top:none;padding-top:0;">
+            <span class="activity-icon in"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span>
+            <div>
+              <div class="activity-row-title" id="youPasskeyRole">Owner</div>
+              <div class="activity-row-sub">Registered on this device, approves your contributions and withdrawals</div>
+            </div>
+          </div>
+          <button class="btn btn-ghost btn-full" id="youSignOutBtn" style="display:none;margin-top:1rem;" onclick="GoalsTab.signOut()">Sign out of this device</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:1.25rem;">
+        <div class="card-header"><span class="panel-title">Wallet</span></div>
+        <div id="youWalletConnected" style="display:none;">
+          <p class="pane-note" style="font-family:var(--font-mono);word-break:break-all;margin-bottom:1rem;" id="youWalletAddress">-</p>
+          <button class="btn btn-ghost btn-full" onclick="handleDisconnectWallet()">Disconnect</button>
+        </div>
+        <div id="youWalletDisconnected">
+          <p class="pane-note" style="margin-bottom:1.25rem;">You don't need a wallet for goals. Connect one only if you want to add funds from it.</p>
+          <button class="btn btn-primary btn-full" onclick="handleConnectWallet()">Connect Wallet</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:1.25rem;">
+        <div class="card-header"><span class="panel-title">Network</span></div>
+        <div class="cluster-badges" id="clusterBadges" style="padding-top:0;">
+          <span class="cluster-badge cluster-mainnet" title="Payments, swaps and RPC run on Solana mainnet, real money"><span class="cluster-dot"></span>Payments: mainnet</span>
+          <span class="cluster-badge" id="programClusterBadge" title="The Sela program and goal token run on this cluster"><span class="cluster-dot"></span>Program: <span id="programClusterName">devnet</span></span>
+          <span id="rpc-status-mount"></span>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:1.25rem;">
+        <div class="card-header"><span class="panel-title">About Sela</span></div>
+        <p class="pane-note">Shared savings goals on Solana. No email, no password, your device's passkey approves everything. Payments and swaps run on a live mainnet engine, goals and allowances run on the program linked below.</p>
+        <div style="display:flex;gap:0.75rem;margin-top:1rem;flex-wrap:wrap;">
+          <a href="index.html" class="btn btn-ghost btn-sm">About / Landing Page</a>
+          <a id="youExplorerLink" href="#" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">View Program</a>
+        </div>
+      </div>
+
+      <div style="margin-top:2rem;padding-top:1.25rem;border-top:1px solid var(--border);text-align:center;">
+        <div class="footer-links" style="justify-content:center;margin-bottom:0.5rem;">
+          <a href="privacy.html">Privacy</a>
+          <span class="footer-dot">&middot;</span>
+          <a href="tos.html">Terms</a>
+        </div>
+        <span class="footer-brand">Made by TJS Code</span>
       </div>
 
     </div>
@@ -969,6 +987,10 @@
       <button class="bottom-tab-btn" data-view="token" onclick="switchView('token')">
         <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M7 16V4m0 0L3 8m4-4l4 4"/><path d="M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>
         <span class="bottom-tab-btn-label">Token</span>
+      </button>
+      <button class="bottom-tab-btn" data-view="invoices" onclick="switchView('invoices')">
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span class="bottom-tab-btn-label">Invoices</span>
       </button>
       <button class="bottom-tab-btn" data-view="activity" onclick="switchView('activity')">
         <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
@@ -1089,18 +1111,18 @@
     // are real views too but reached only through an action button or a
     // link (see MOUNTS.md / the Home action row), not their own bottom
     // tab, so they're not in this map, but switchView still handles them.
-    const BOTTOM_TAB_FOR_VIEW = { home: 'home', goals: 'goals', token: 'token', activity: 'activity', you: 'you' };
+    const BOTTOM_TAB_FOR_VIEW = { home: 'home', goals: 'goals', token: 'token', invoices: 'invoices', activity: 'activity', you: 'you' };
 
     function switchView(name) {
       document.querySelectorAll('.app-view').forEach((p) => p.classList.remove('active'));
       const target = document.getElementById('view-' + name);
       if (target) target.classList.add('active');
 
-      const bottomKey = BOTTOM_TAB_FOR_VIEW[name] || (name === 'invoices' || name === 'subscriptions' ? 'you' : null);
+      const bottomKey = BOTTOM_TAB_FOR_VIEW[name] || (name === 'subscriptions' ? 'invoices' : null);
       document.querySelectorAll('.bottom-tab-btn').forEach((b) => b.classList.toggle('active', b.dataset.view === bottomKey));
 
       if (name === 'token' && !swapInitialized) { VeilSwap.init(); swapInitialized = true; }
-      if (name === 'you' && !onrampInitialized) { VeilOnramp.init(); onrampInitialized = true; }
+      if (name === 'token' && !onrampInitialized) { VeilOnramp.init(); onrampInitialized = true; }
       if (name === 'invoices') updateStats();
 
       window.scrollTo({ top: 0, behavior: 'instant' });
