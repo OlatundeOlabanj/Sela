@@ -42,9 +42,31 @@ const PasskeyClient = (() => {
   // browser", which is what these messages say.
   const BROWSER_HINT = "Passkeys aren't available in this browser. This usually happens inside a wallet app's built-in browser. Open this page in Safari or Chrome instead.";
 
+  function _nativeAvailable() {
+    return !!(window.PublicKeyCredential && navigator.credentials && typeof navigator.credentials.create === 'function');
+  }
+
+  // Where native WebAuthn is missing (a wallet app's built-in browser),
+  // the passkey step is handed to the phone's real browser through
+  // passkey-bridge-client.js, loaded only when needed. Browsers with
+  // native support never load it and behave exactly as before.
+  let _bridgePromise = null;
+  function _loadBridge() {
+    if (window.PasskeyBridge) return Promise.resolve(window.PasskeyBridge);
+    if (!_bridgePromise) {
+      _bridgePromise = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = '/passkey-bridge-client.js';
+        s.onload = () => resolve(window.PasskeyBridge);
+        s.onerror = () => { _bridgePromise = null; reject(new Error(BROWSER_HINT)); };
+        document.head.appendChild(s);
+      });
+    }
+    return _bridgePromise;
+  }
+
   function checkSupport() {
-    const ok = !!(window.PublicKeyCredential && navigator.credentials && typeof navigator.credentials.create === 'function');
-    return ok ? { ok: true } : { ok: false, reason: BROWSER_HINT };
+    return _nativeAvailable() ? { ok: true } : { ok: true, viaBridge: true };
   }
 
   // NotAllowedError is what WebAuthn throws both when the user cancels
@@ -158,33 +180,45 @@ const PasskeyClient = (() => {
     const challenge = crypto.getRandomValues(new Uint8Array(32));
     const userId = crypto.getRandomValues(new Uint8Array(16));
 
-    const support = checkSupport();
-    if (!support.ok) throw new Error(support.reason);
+    let spki;
+    let rawId;
+    if (_nativeAvailable()) {
+      let credential;
+      try {
+        credential = await navigator.credentials.create({
+          publicKey: {
+            challenge,
+            rp: { name: 'Sela', id: window.location.hostname },
+            user: { id: userId, name: label || 'Sela device', displayName: label || 'Sela device' },
+            pubKeyCredParams: [{ type: 'public-key', alg: -7 }], // ES256 / P-256, matches secp256r1
+            authenticatorSelection: { userVerification: 'required', residentKey: 'preferred' },
+            timeout: 60000,
+            attestation: 'none',
+          },
+        });
+      } catch (err) {
+        throw _friendlyError(err);
+      }
 
-    let credential;
-    try {
-      credential = await navigator.credentials.create({
-      publicKey: {
+      if (typeof credential.response.getPublicKey !== 'function') {
+        throw new Error('This browser does not support getPublicKey() on WebAuthn credentials, cannot extract the passkey public key. Use a recent Chrome, Edge, Firefox, or Safari 16.4+.');
+      }
+      spki = credential.response.getPublicKey();
+      rawId = new Uint8Array(credential.rawId);
+    } else {
+      const bridge = await _loadBridge();
+      const r = await bridge.request({
+        type: 'create',
         challenge,
-        rp: { name: 'Sela', id: window.location.hostname },
-        user: { id: userId, name: label || 'Sela device', displayName: label || 'Sela device' },
-        pubKeyCredParams: [{ type: 'public-key', alg: -7 }], // ES256 / P-256, matches secp256r1
-        authenticatorSelection: { userVerification: 'required', residentKey: 'preferred' },
-        timeout: 60000,
-        attestation: 'none',
-      },
+        label: label || 'Sela device',
+        summary: 'Create a passkey for ' + (label || 'this device'),
       });
-    } catch (err) {
-      throw _friendlyError(err);
+      spki = _b64urlToBytes(r.publicKeySpki);
+      rawId = _b64urlToBytes(r.credentialId);
     }
-
-    if (typeof credential.response.getPublicKey !== 'function') {
-      throw new Error('This browser does not support getPublicKey() on WebAuthn credentials, cannot extract the passkey public key. Use a recent Chrome, Edge, Firefox, or Safari 16.4+.');
-    }
-    const spki = credential.response.getPublicKey();
     const compressedPubkey = _spkiToCompressedPoint(spki);
 
-    return { compressedPubkey, credentialId: new Uint8Array(credential.rawId) };
+    return { compressedPubkey, credentialId: rawId };
   }
 
   function rememberCredentialForVault(vaultPdaBase58, credentialIdBytes) {
@@ -259,26 +293,38 @@ const PasskeyClient = (() => {
     parts.push(material.prefix);
     const challenge = await _sha256(_concat(parts));
 
-    const support = checkSupport();
-    if (!support.ok) throw new Error(support.reason);
-
-    let assertion;
-    try {
-      assertion = await navigator.credentials.get({
-      publicKey: {
+    let authenticatorData;
+    let clientDataJson;
+    let rawSignature64;
+    if (_nativeAvailable()) {
+      let assertion;
+      try {
+        assertion = await navigator.credentials.get({
+          publicKey: {
+            challenge,
+            allowCredentials: [{ type: 'public-key', id: credentialId }],
+            userVerification: 'required',
+            timeout: 60000,
+          },
+        });
+      } catch (err) {
+        throw _friendlyError(err);
+      }
+      authenticatorData = new Uint8Array(assertion.response.authenticatorData);
+      clientDataJson = new Uint8Array(assertion.response.clientDataJSON);
+      rawSignature64 = _derSignatureToRawLowS(assertion.response.signature);
+    } else {
+      const bridge = await _loadBridge();
+      const r = await bridge.request({
+        type: 'get',
         challenge,
-        allowCredentials: [{ type: 'public-key', id: credentialId }],
-        userVerification: 'required',
-        timeout: 60000,
-      },
+        credentialId: new Uint8Array(credentialId),
+        summary: kind === 'withdraw' ? 'Approve a withdrawal from a Sela goal' : 'Approve a contribution to a Sela goal',
       });
-    } catch (err) {
-      throw _friendlyError(err);
+      authenticatorData = _b64urlToBytes(r.authenticatorData);
+      clientDataJson = _b64urlToBytes(r.clientDataJSON);
+      rawSignature64 = _derSignatureToRawLowS(_b64urlToBytes(r.signature));
     }
-
-    const authenticatorData = new Uint8Array(assertion.response.authenticatorData);
-    const clientDataJson = new Uint8Array(assertion.response.clientDataJSON);
-    const rawSignature64 = _derSignatureToRawLowS(assertion.response.signature);
 
     const clientDataHash = await _sha256(clientDataJson);
     const message = _concat([authenticatorData, clientDataHash]);

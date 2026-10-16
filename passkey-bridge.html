@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="robots" content="noindex" />
+  <title>Approve with your passkey, Sela</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .bridge-wrap { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem; }
+    .bridge-card { width: 100%; max-width: 420px; }
+    .bridge-icon { width: 56px; height: 56px; border-radius: 50%; background: var(--accent-dim); border: 1px solid var(--accent); display: flex; align-items: center; justify-content: center; color: var(--accent); margin: 0 auto 1.25rem; }
+    .bridge-title { text-align: center; font-size: 1.35rem; font-weight: 600; color: var(--text); margin-bottom: 0.5rem; }
+    .bridge-text { text-align: center; color: var(--text-muted); font-size: 0.92rem; line-height: 1.6; margin-bottom: 1.25rem; }
+    .bridge-summary { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.75rem 0.9rem; margin-bottom: 1.25rem; word-break: break-word; }
+    .bridge-summary small { display: block; color: var(--text-muted); margin-bottom: 0.25rem; }
+    .bridge-status { text-align: center; font-size: 0.85rem; margin-top: 1rem; color: var(--text-muted); min-height: 1.2em; }
+    .bridge-status.ok { color: #10b981; }
+    .bridge-status.bad { color: #ef4444; }
+    .bridge-footer { margin-top: 2rem; font-size: 0.75rem; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div class="bridge-wrap">
+    <div class="card bridge-card">
+      <div class="bridge-icon" aria-hidden="true">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg>
+      </div>
+      <h1 class="bridge-title" id="bridgeTitle">Approve with your passkey</h1>
+      <p class="bridge-text" id="bridgeText">Checking your request.</p>
+      <div class="bridge-summary" id="bridgeSummary" hidden><small>Request from the Sela app</small><span id="bridgeSummaryText"></span></div>
+      <button class="btn btn-primary btn-full" id="bridgeGo" type="button" hidden>Continue with passkey</button>
+      <div class="bridge-status" id="bridgeStatus" role="status"></div>
+    </div>
+    <div class="bridge-footer">Made by TJS Code</div>
+  </div>
+
+  <script>
+  (function () {
+    const ENDPOINT = '/.netlify/functions/passkey-bridge';
+    const $ = (id) => document.getElementById(id);
+    const code = new URLSearchParams(location.search).get('code') || '';
+    let request = null;
+
+    function b64urlToBytes(s) {
+      const b64 = s.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(s.length / 4) * 4, '=');
+      const bin = atob(b64);
+      const out = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+      return out;
+    }
+    function bytesToB64url(buf) {
+      const bytes = new Uint8Array(buf);
+      let bin = '';
+      for (const b of bytes) bin += String.fromCharCode(b);
+      return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+    function setStatus(text, cls) {
+      const el = $('bridgeStatus');
+      el.textContent = text;
+      el.className = 'bridge-status' + (cls ? ' ' + cls : '');
+    }
+    function fail(title, text) {
+      $('bridgeTitle').textContent = title;
+      $('bridgeText').textContent = text;
+      $('bridgeGo').hidden = true;
+    }
+
+    async function load() {
+      if (!/^[A-Za-z0-9_-]{22}$/.test(code)) return fail('This link is not valid', 'Start again from the Sela app and open the new link.');
+      if (!window.PublicKeyCredential || !navigator.credentials) {
+        return fail('Passkeys are not available here', 'This browser cannot use passkeys either. Open the link in Chrome or Safari on your phone.');
+      }
+      let res;
+      try { res = await fetch(ENDPOINT + '?code=' + encodeURIComponent(code) + '&role=bridge', { cache: 'no-store' }); }
+      catch (_) { return fail('No connection', 'Check your internet and reload this page.'); }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return fail('This request is no longer open', data.error || 'Start again from the Sela app.');
+      request = data;
+      $('bridgeTitle').textContent = request.type === 'create' ? 'Create your passkey' : 'Approve with your passkey';
+      $('bridgeText').textContent = 'Your fingerprint, face or screen lock confirms it. Nothing leaves this device except the signed answer.';
+      if (request.summary) { $('bridgeSummaryText').textContent = request.summary; $('bridgeSummary').hidden = false; }
+      $('bridgeGo').hidden = false;
+    }
+
+    async function complete(body) {
+      const res = await fetch(ENDPOINT + '?action=complete&code=' + encodeURIComponent(code), {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Could not send the answer back to the app.');
+    }
+
+    async function run() {
+      $('bridgeGo').disabled = true;
+      setStatus('Waiting for your passkey prompt...');
+      const challenge = b64urlToBytes(request.challenge);
+      try {
+        if (request.type === 'create') {
+          const cred = await navigator.credentials.create({
+            publicKey: {
+              challenge,
+              rp: { name: 'Sela', id: window.location.hostname },
+              user: { id: crypto.getRandomValues(new Uint8Array(16)), name: request.label || 'Sela device', displayName: request.label || 'Sela device' },
+              pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+              authenticatorSelection: { userVerification: 'required', residentKey: 'preferred' },
+              timeout: 60000,
+              attestation: 'none',
+            },
+          });
+          if (typeof cred.response.getPublicKey !== 'function') throw new Error('This browser cannot export the passkey public key. Use a recent Chrome or Safari.');
+          await complete({ result: {
+            credentialId: bytesToB64url(cred.rawId),
+            publicKeySpki: bytesToB64url(cred.response.getPublicKey()),
+            clientDataJSON: bytesToB64url(cred.response.clientDataJSON),
+          } });
+        } else {
+          const assertion = await navigator.credentials.get({
+            publicKey: {
+              challenge,
+              allowCredentials: [{ type: 'public-key', id: b64urlToBytes(request.credentialId) }],
+              userVerification: 'required',
+              timeout: 60000,
+            },
+          });
+          await complete({ result: {
+            authenticatorData: bytesToB64url(assertion.response.authenticatorData),
+            clientDataJSON: bytesToB64url(assertion.response.clientDataJSON),
+            signature: bytesToB64url(assertion.response.signature),
+          } });
+        }
+        $('bridgeGo').hidden = true;
+        $('bridgeTitle').textContent = 'Done';
+        $('bridgeText').textContent = 'Switch back to your wallet app. Sela continues by itself, you do not need to do anything else here.';
+        setStatus('Approved.', 'ok');
+      } catch (err) {
+        $('bridgeGo').disabled = false;
+        if (err && err.name === 'NotAllowedError') {
+          setStatus('The prompt was cancelled. Tap the button to try again.', 'bad');
+        } else {
+          setStatus((err && err.message) || 'Something went wrong.', 'bad');
+          try { await complete({ error: (err && err.message) || 'The passkey step failed.' }); } catch (_) { /* already closed */ }
+        }
+      }
+    }
+
+    $('bridgeGo').addEventListener('click', run);
+    load();
+  })();
+  </script>
+</body>
+</html>
