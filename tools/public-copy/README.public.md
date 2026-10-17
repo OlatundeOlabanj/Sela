@@ -12,7 +12,7 @@ Made by TJS Code. Built for the Crypto World's Fair hackathon.
 | --- | --- | --- |
 | Web app | Plain HTML, CSS and JS dashboard, no framework | `index.html`, `dashboard.html`, `style.css`, `app.js` |
 | Payments | USDC transfers on Solana mainnet, sent through Jito with an RPC dual send and a retry agent | `veil-engine.js`, `smart-tx.js`, `netlify/functions/submit-bundle.js` |
-| Goals and vaults | Anchor program with shared goals, recurring allowances and passkey approvals, deployed on devnet | `programs/`, `program-client.js`, `goals-tab.js` |
+| Goals and vaults | Anchor program with shared goals, recurring allowances and passkey approvals, deployed on devnet | `programs/`, `program-client.js`, `goals-tab.js`, `passkey-client.js`, `passkey-bridge*` |
 | Goal token | A Meteora Dynamic Bonding Curve token per goal, devnet | `goal-token-dbc/`, `netlify/functions/goal-token-*.js` |
 | RPC Fast | Every mainnet RPC call goes through one server side proxy that points at RPC Fast, plus a live health check | `lib/rpcClient.js`, `netlify/functions/rpc-proxy.js`, `netlify/functions/rpc-health.js` |
 | Solami | Activity feed fed by Solami's Blur data stream, with a script that checks your key | `lib/activitySource.js`, `netlify/functions/activity-feed.js`, `solami-verify.mjs` |
@@ -44,9 +44,10 @@ keys at all. What each key unlocks:
 | `DEVNET_RPC_URL` | Optional. Defaults to the public devnet endpoint, which is enough for goals. |
 | `ACTIVITY_SOURCE` | `mock` (default, clearly labelled in the UI) or `solami` for live data. |
 | `SOLAMI_API_KEY` | Live activity feed from Solami. Must be a key with the DataApi permission ticked when you create it. Used only on the server. |
-| `SOLAMI_ACTIVITY_TYPES` | Event types to show, comma separated. Default `token_create,meme,graduation` (launches, bonding curve progress, graduations). Also `swap`, `liquidity`, `transfer`, `pool_create`. |
-| `SOLAMI_ACTIVITY_DEX`, `SOLAMI_ACTIVITY_ADDRESS` | Optional: only events from these venues or token mints. |
-| `SOLAMI_BACKFILL`, `SOLAMI_CACHE_MS`, `SOLAMI_POLL_WINDOW_MS` | Optional: how many recent events per type to replay on connect (default 10), how long to cache the result (default 20000 ms), how long to listen per refresh (default 3000 ms). |
+| `SOLAMI_ACTIVITY_TYPES` | Event types to show, comma separated. Default `token_create,graduation`. Also `meme`, `swap`, `liquidity`, `transfer`, `pool_create`. |
+| `SOLAMI_ACTIVITY_VENUES` | Which venues to show, matched against an event's launchpad or dex. Default `meteora_dbc,meteora_damm2` (Meteora DBC launches and graduations into DAMM v2). `all` shows every venue. |
+| `SOLAMI_ACTIVITY_DEX`, `SOLAMI_ACTIVITY_ADDRESS` | Optional: also filter on Solami's side by dex, or to specific token mints. |
+| `SOLAMI_BACKFILL`, `SOLAMI_CACHE_MS`, `SOLAMI_POLL_WINDOW_MS` | Optional: recent events per type replayed on connect (default 200 with a venue filter, 10 without), result cache (default 30000 ms), listening time per refresh (default 3000 ms). |
 | `GROQ_API_KEY` | The AI retry agent for payments. |
 | `HELIUS_API_KEY` | Legacy fallback if `RPC_HTTP_URL` is not set. |
 | `KEEPER_KEYPAIR_JSON` | The keeper that submits recurring allowances. |
@@ -89,10 +90,30 @@ Open either hash on Solana Explorer with the devnet cluster selected.
 `goal-token-dbc/studio-config/finish-curve.mjs` explains why the last gap
 needed a partial fill swap and how it was closed.
 
+## Passkeys on a phone
+
+Wallet apps such as Phantom open websites in a built-in browser that has
+no passkey support, and a normal phone browser has no wallet. So the app
+hands only the passkey step to the phone's real browser:
+
+1. In the wallet browser, creating a goal or approving a spend shows a card
+   with an Open in Chrome (or Open in your browser) button.
+2. The button opens `passkey-bridge.html` in Chrome or Safari, which asks for
+   your fingerprint or face and posts the signed answer back through
+   `netlify/functions/passkey-bridge.js` (one time, five minutes, deleted
+   after use).
+3. The wallet browser, which kept running, picks up the answer and carries
+   on. The wallet still signs the transaction and the chain still verifies
+   the passkey signature, the handoff only carries bytes.
+
+Where the browser has passkeys itself (desktop, Chrome, Safari) none of this
+is used. Tested against a virtual passkey device, not yet inside the real
+Phantom app.
+
 ## Not finished
 
-- Mobile wallet browsers: passkeys do not work inside wallet in-app
-  browsers yet. Use a desktop browser with a wallet extension.
+- The passkey handoff above has not been run inside the real Phantom app
+  or on iOS.
 - The naira ramp is built but switched off until the payment partner
   finishes verification.
 - The Anchor program is on devnet only.

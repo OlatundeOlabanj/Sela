@@ -64,6 +64,7 @@
     if (source === 'solami') {
       const parts = ['Live via Solami'];
       if (filters && filters.type) parts.push('type: ' + filters.type);
+      if (filters && filters.venues) parts.push('venues: ' + filters.venues);
       if (filters && filters.dex) parts.push('dex: ' + filters.dex);
       if (filters && filters.address) parts.push('address: ' + String(filters.address).slice(0, 6) + '...');
       return `<div style="font-size:0.72rem;color:var(--accent);font-family:var(--font-mono);margin-bottom:0.5rem;">${parts.map(esc).join(' | ')}</div>`;
